@@ -272,6 +272,8 @@ public:
     bool BotActiveAloneForceWhenIsFriend;
     bool BotActiveAloneForceWhenInGuild;
     bool botActiveAloneSmartScale;
+    uint32 botActiveAloneSmartScaleDiffLimitfloor;
+    uint32 botActiveAloneSmartScaleDiffLimitCeiling;
     uint32 botActiveAloneSmartScaleWhenMinLevel;
     uint32 botActiveAloneSmartScaleWhenMaxLevel;
 
@@ -323,6 +325,11 @@ public:
     int32 addClassAccountPoolSize;
     int32 maintenanceCommand;
     int32 autoGearCommand, autoGearCommandAltBots, autoGearQualityLimit, autoGearScoreLimit;
+
+    uint32 useGroundMountAtMinLevel;
+    uint32 useFastGroundMountAtMinLevel;
+    uint32 useFlyMountAtMinLevel;
+    uint32 useFastFlyMountAtMinLevel;
 
     std::string const GetTimestampStr();
     bool hasLog(std::string const fileName)

@@ -392,7 +392,7 @@ void PlayerbotAI::UpdateAI(uint32 elapsed, bool minimal)
         }
     }
 
-    if (!bot->InBattleground() && !bot->inRandomLfgDungeon() && bot->GetGroup())
+    if (!bot->InBattleground() && !bot->inRandomLfgDungeon() && bot->GetGroup() && !bot->GetGroup()->isLFGGroup())
 	{
 		Player* leader = bot->GetGroup()->GetLeader();
 		if (leader && leader != bot) // Checks if the leader is valid and is not the bot itself
@@ -405,6 +405,27 @@ void PlayerbotAI::UpdateAI(uint32 elapsed, bool minimal)
 			}
 		}
 	}
+
+    if (bot->GetGroup() && bot->GetGroup()->isLFGGroup())
+    {
+        bool hasRealPlayer = false;
+        for (GroupReference* ref = bot->GetGroup()->GetFirstMember(); ref; ref = ref->next())
+        {
+            Player* member = ref->GetSource();
+            if (!member)
+                continue;
+            PlayerbotAI* memberAI = GET_PLAYERBOT_AI(member);
+            if (memberAI && !memberAI->IsRealPlayer())
+                continue;
+            hasRealPlayer = true;
+            break;
+        }
+        if (!hasRealPlayer)
+        {
+            bot->RemoveFromGroup();
+            ResetStrategies();
+        }
+    }
 
     bool min = minimal;
     UpdateAIInternal(elapsed, min);
@@ -1312,11 +1333,9 @@ void PlayerbotAI::DoNextAction(bool min)
     // if in combat but stick with old data - clear targets
     if (currentEngine == engines[BOT_STATE_NON_COMBAT] && bot->IsInCombat())
     {
-        if (aiObjectContext->GetValue<Unit*>("current target")->Get() != nullptr ||
-            aiObjectContext->GetValue<ObjectGuid>("pull target")->Get() != ObjectGuid::Empty ||
-            aiObjectContext->GetValue<Unit*>("dps target")->Get() != nullptr)
+        if (aiObjectContext->GetValue<Unit*>("current target")->Get() != nullptr)
         {
-            Reset();
+            aiObjectContext->GetValue<Unit*>("current target")->Set(nullptr);
         }
     }
 
@@ -4159,7 +4178,7 @@ bool PlayerbotAI::AllowActive(ActivityType activityType)
     // which prevents unneeded expensive GameTime calls.
     if (_isBotInitializing)
     {
-        _isBotInitializing = GameTime::GetUptime().count() < sPlayerbotAIConfig->maxRandomBots * 0.12;
+        _isBotInitializing = GameTime::GetUptime().count() < sPlayerbotAIConfig->maxRandomBots * 0.11;
 
         // no activity allowed during bot initialization
         if (_isBotInitializing)
@@ -4359,33 +4378,18 @@ bool PlayerbotAI::AllowActivity(ActivityType activityType, bool checkNow)
 
 uint32 PlayerbotAI::AutoScaleActivity(uint32 mod)
 {
-    uint32 maxDiff = sWorldUpdateTime.GetAverageUpdateTime();
+    uint32 maxDiff = sWorldUpdateTime.GetMaxUpdateTimeOfCurrentTable();
+    uint32 diffLimitFloor = sPlayerbotAIConfig->botActiveAloneSmartScaleDiffLimitfloor;
+    uint32 diffLimitCeiling = sPlayerbotAIConfig->botActiveAloneSmartScaleDiffLimitCeiling;
+    double spreadSize = (double)(diffLimitCeiling - diffLimitFloor) / 6;
 
-    if (maxDiff > 500) return 0;
-    if (maxDiff > 250)
-    {
-        if (Map* map = bot->GetMap())
-        {
-            if (map->GetEntry()->IsWorldMap())
-            {
-                if (!HasRealPlayers(map))
-                {
-                    return 0;
-                }
-
-                if (!map->IsGridLoaded(bot->GetPositionX(), bot->GetPositionY()))
-                {
-                    return 0;
-                }
-            }
-        }
-
-        return (mod * 1) / 10;
-    }
-    if (maxDiff > 200) return (mod * 3) / 10;
-    if (maxDiff > 150) return (mod * 5) / 10;
-    if (maxDiff > 100) return (mod * 6) / 10;
-    if (maxDiff > 75)  return (mod * 9) / 10;
+    // apply scaling
+    if (maxDiff > diffLimitCeiling)                  return 0;
+    if (maxDiff > diffLimitFloor + (4 * spreadSize)) return (mod * 1) / 10;
+    if (maxDiff > diffLimitFloor + (3 * spreadSize)) return (mod * 3) / 10;
+    if (maxDiff > diffLimitFloor + (2 * spreadSize)) return (mod * 5) / 10;
+    if (maxDiff > diffLimitFloor + (1 * spreadSize)) return (mod * 7) / 10;
+    if (maxDiff > diffLimitFloor)                    return (mod * 9) / 10;
 
     return mod;
 }
