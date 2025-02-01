@@ -78,6 +78,7 @@ RandomPlayerbotFactory::RandomPlayerbotFactory(uint32 accountId) : accountId(acc
     availableRaces[CLASS_ROGUE].push_back(RACE_NIGHTELF);
     availableRaces[CLASS_ROGUE].push_back(RACE_GNOME);
     availableRaces[CLASS_ROGUE].push_back(RACE_ORC);
+    availableRaces[CLASS_ROGUE].push_back(RACE_UNDEAD_PLAYER);
     availableRaces[CLASS_ROGUE].push_back(RACE_TROLL);
     if (expansion >= EXPANSION_THE_BURNING_CRUSADE)
     {
@@ -800,7 +801,7 @@ void RandomPlayerbotFactory::CreateRandomArenaTeams(ArenaType type, uint32 count
         sPlayerbotAIConfig->randomBotArenaTeams.push_back(arenateam->GetId());
     }
 
-    LOG_INFO("playerbots", "{} random bot arena teams available", arenaTeamNumber);
+    LOG_INFO("playerbots", "{} random bot {}vs{} arena teams available", arenaTeamNumber, type, type);
 }
 
 std::string const RandomPlayerbotFactory::CreateRandomArenaTeamName()

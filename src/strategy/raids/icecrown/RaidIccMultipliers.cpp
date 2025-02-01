@@ -323,6 +323,48 @@ float IccBpcAssistMultiplier::GetValue(Action* action)
         }
     }
 
+    Unit* Valanar = AI_VALUE2(Unit*, "find target", "prince valanar");
+    if (!Valanar || !Valanar->IsAlive())
+        return 1.0f;
+
+    Aura* auraValanar = botAI->GetAura("Invocation of Blood", Valanar);
+
+    if (!botAI->IsTank(bot) && auraValanar && Valanar->HasUnitState(UNIT_STATE_CASTING))
+    {
+        if (dynamic_cast<IccBpcEmpoweredVortexAction*>(action)) 
+            return 1.0f;
+
+        if (dynamic_cast<AttackRtiTargetAction*>(action) ||
+            dynamic_cast<TankAssistAction*>(action) ||
+            dynamic_cast<DpsAssistAction*>(action) ||
+            dynamic_cast<IccBpcMainTankAction*>(action) ||
+            dynamic_cast<CombatFormationMoveAction*>(action))
+            return 0.0f;
+    }
+
+    if (botAI->IsRangedDps(bot))
+    {
+        GuidVector npcs = AI_VALUE(GuidVector, "nearest hostile npcs");
+        for (auto& npc : npcs)
+        {
+            Unit* unit = botAI->GetUnit(npc);
+            if (unit)
+            {
+                if (unit->GetName() == "Kinetic Bomb" && ((unit->GetPositionZ() - bot->GetPositionZ()) < 25.0f))
+                {
+                    if (dynamic_cast<IccBpcKineticBombAction*>(action))
+                        return 1.0f;
+
+                    if (dynamic_cast<AttackRtiTargetAction*>(action) ||
+                        dynamic_cast<TankAssistAction*>(action) ||
+                        dynamic_cast<DpsAssistAction*>(action) ||
+                        dynamic_cast<IccBpcMainTankAction*>(action))
+                        return 0.0f;
+                }
+            }
+        }
+    }
+
     // For assist tank during BPC fight
     if (botAI->IsAssistTank(bot))
     {
@@ -365,17 +407,29 @@ float IccBqlVampiricBiteMultiplier::GetValue(Action* action)
     if (!boss)
         return 1.0f;
 
-    if (bot->HasAura(70877) || bot->HasAura(71474)) // If bot has frenzied bloodthirst
+    Aura* aura = botAI->GetAura("Frenzied Bloodthirst", bot);
+
+    if (botAI->IsMelee(bot) && ((boss->GetPositionZ() - bot->GetPositionZ()) > 5.0f) && !aura)
+        {
+            if (dynamic_cast<DpsAssistAction*>(action) ||
+                dynamic_cast<TankAssistAction*>(action) ||
+                dynamic_cast<CastDebuffSpellOnAttackerAction*>(action) ||
+                dynamic_cast<CombatFormationMoveAction*>(action))
+                return 0.0f;
+        }
+
+    // If bot has frenzied bloodthirst, allow highest priority for bite action
+    if (aura) // If bot has frenzied bloodthirst
     {
         if (dynamic_cast<IccBqlVampiricBiteAction*>(action))
             return 5.0f;  // Highest priority for bite action
-        else if (dynamic_cast<DpsAssistAction*>(action) ||
-                 dynamic_cast<TankAssistAction*>(action) ||
-                 dynamic_cast<CastDebuffSpellOnAttackerAction*>(action) ||
-                 dynamic_cast<CombatFormationMoveAction*>(action))
+
+        if (dynamic_cast<DpsAssistAction*>(action) || 
+            dynamic_cast<IccBqlTankPositionAction*>(action) ||
+            dynamic_cast<TankAssistAction*>(action) ||
+            dynamic_cast<CastDebuffSpellOnAttackerAction*>(action) ||
+            dynamic_cast<CombatFormationMoveAction*>(action))
             return 0.0f;  // Disable all formation/movement actions
-        else
-            return 0.0f;  // Disable all other actions
     }
 
     return 1.0f;
@@ -627,13 +681,23 @@ float IccLichKingAddsMultiplier::GetValue(Action* action)
     Unit* boss = AI_VALUE2(Unit*, "find target", "the lich king");
     if (!boss)
         return 1.0f;
+    Unit* currentTarget = AI_VALUE(Unit*, "current target");
 
     if (dynamic_cast<IccLichKingWinterAction*>(action))
     {
-        if(dynamic_cast<CombatFormationMoveAction*>(action) || dynamic_cast<IccLichKingAddsAction*>(action))
+        if (currentTarget && currentTarget->GetGUID() == boss->GetGUID())
+        { 
+            if (dynamic_cast<ReachMeleeAction*>(action) || dynamic_cast<ReachSpellAction*>(action) || dynamic_cast<ReachTargetAction*>(action))
+                return 0.0f;
+        }
+
+        if (dynamic_cast<CombatFormationMoveAction*>(action) || dynamic_cast<IccLichKingAddsAction*>(action))
             return 0.0f;
+
         return 1.0f;
     }
+
+    //melee reach, spell reach, ranged reach
 
     if (botAI->IsRanged(bot))
     {
