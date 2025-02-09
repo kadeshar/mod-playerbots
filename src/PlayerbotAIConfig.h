@@ -35,6 +35,7 @@ enum class HealingManaEfficiency : uint8
 };
 
 #define MAX_SPECNO 20
+#define MAX_WORLDBUFF_SPECNO 3
 
 class PlayerbotAIConfig
 {
@@ -54,7 +55,7 @@ public:
     bool IsInPvpProhibitedArea(uint32 id);
 
     bool enabled;
-    bool allowGuildBots, allowPlayerBots;
+    bool allowAccountBots, allowGuildBots;
     bool randomBotGuildNearby, randomBotInvitePlayer, inviteChat;
     uint32 globalCoolDown, reactDelay, maxWaitForMove, disableMoveSplinePath, maxMovementSearchTime, expireActionTime,
         dispelAuraDuration, passiveDelay, repeatDelay, errorDelay, rpgDelay, sitDelay, returnDelay, lootDelay;
@@ -334,7 +335,7 @@ public:
     bool botRepairWhenSummon;
     bool autoInitOnly;
     float autoInitEquipLevelLimitRatio;
-    int32 maxAddedBots, maxAddedBotsPerClass;
+    int32 maxAddedBots;
     int32 addClassCommand;
     int32 addClassAccountPoolSize;
     int32 maintenanceCommand;
@@ -358,7 +359,7 @@ public:
     }
     void log(std::string const fileName, const char* str, ...);
 
-    void loadWorldBuf(uint32 factionId, uint32 classId, uint32 specId, uint32 minLevel, uint32 maxLevel);
+    void loadWorldBuff(uint32 factionId, uint32 classId, uint32 specId, uint32 minLevel, uint32 maxLevel);
     static std::vector<std::vector<uint32>> ParseTempTalentsOrder(uint32 cls, std::string temp_talents_order);
     static std::vector<std::vector<uint32>> ParseTempPetTalentsOrder(uint32 spec, std::string temp_talents_order);
 };

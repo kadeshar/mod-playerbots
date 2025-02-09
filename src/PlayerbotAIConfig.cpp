@@ -125,11 +125,11 @@ bool PlayerbotAIConfig::Initialize()
 
     iterationsPerTick = sConfigMgr->GetOption<int32>("AiPlayerbot.IterationsPerTick", 100);
 
+    allowAccountBots = sConfigMgr->GetOption<bool>("AiPlayerbot.AllowAccountBots", true);
     allowGuildBots = sConfigMgr->GetOption<bool>("AiPlayerbot.AllowGuildBots", true);
     randomBotGuildNearby = sConfigMgr->GetOption<bool>("AiPlayerbot.RandomBotGuildNearby", false);
     randomBotInvitePlayer = sConfigMgr->GetOption<bool>("AiPlayerbot.RandomBotInvitePlayer", false);
     inviteChat = sConfigMgr->GetOption<bool>("AiPlayerbot.InviteChat", false);
-    allowPlayerBots = sConfigMgr->GetOption<bool>("AiPlayerbot.AllowPlayerBots", false);
 
     randomBotMapsAsString = sConfigMgr->GetOption<std::string>("AiPlayerbot.RandomBotMaps", "0,1,530,571");
     LoadList<std::vector<uint32>>(randomBotMapsAsString, randomBotMaps);
@@ -329,9 +329,7 @@ bool PlayerbotAIConfig::Initialize()
     useFlyMountAtMinLevel = sConfigMgr->GetOption<int32>("AiPlayerbot.UseFlyMountAtMinLevel", 60);
     useFastFlyMountAtMinLevel = sConfigMgr->GetOption<int32>("AiPlayerbot.UseFastFlyMountAtMinLevel", 70);
 
-    LOG_INFO("server.loading", "---------------------------------------");
-    LOG_INFO("server.loading", "          Loading TalentSpecs          ");
-    LOG_INFO("server.loading", "---------------------------------------");
+    LOG_INFO("server.loading", "Loading TalentSpecs...");
 
     for (uint32 cls = 1; cls < MAX_CLASSES; ++cls)
     {
@@ -421,14 +419,15 @@ bool PlayerbotAIConfig::Initialize()
     {
         for (uint32 classId = 0; classId < MAX_CLASSES; classId++)
         {
-            for (uint32 specId = 0; specId < MAX_SPECNO; specId++)
+            for (uint32 specId = 0; specId <= MAX_WORLDBUFF_SPECNO; specId++)
             {
-                for (uint32 minLevel = 0; minLevel < MAX_LEVEL; minLevel++)
+                for (uint32 minLevel = 0; minLevel <= randomBotMaxLevel; minLevel++)
                 {
-                    for (uint32 maxLevel = 0; maxLevel < MAX_LEVEL; maxLevel++)
+                    for (uint32 maxLevel = minLevel; maxLevel <= randomBotMaxLevel; maxLevel++)
                     {
-                        loadWorldBuf(factionId, classId, specId, minLevel, maxLevel);
+                        loadWorldBuff(factionId, classId, specId, minLevel, maxLevel);
                     }
+                    loadWorldBuff(factionId, classId, specId, minLevel, 0);
                 }
             }
         }
@@ -474,7 +473,6 @@ bool PlayerbotAIConfig::Initialize()
     autoInitEquipLevelLimitRatio = sConfigMgr->GetOption<float>("AiPlayerbot.AutoInitEquipLevelLimitRatio", 1.0);
 
     maxAddedBots = sConfigMgr->GetOption<int32>("AiPlayerbot.MaxAddedBots", 40);
-    maxAddedBotsPerClass = sConfigMgr->GetOption<int32>("AiPlayerbot.MaxAddedBotsPerClass", 10);
     addClassCommand = sConfigMgr->GetOption<int32>("AiPlayerbot.AddClassCommand", 1);
     addClassAccountPoolSize = sConfigMgr->GetOption<int32>("AiPlayerbot.AddClassAccountPoolSize", 50);
     maintenanceCommand = sConfigMgr->GetOption<int32>("AiPlayerbot.MaintenanceCommand", 1);
@@ -676,7 +674,7 @@ void PlayerbotAIConfig::log(std::string const fileName, char const* str, ...)
     fflush(stdout);
 }
 
-void PlayerbotAIConfig::loadWorldBuf(uint32 factionId1, uint32 classId1, uint32 specId1, uint32 minLevel1, uint32 maxLevel1)
+void PlayerbotAIConfig::loadWorldBuff(uint32 factionId1, uint32 classId1, uint32 specId1, uint32 minLevel1, uint32 maxLevel1)
 {
     std::vector<uint32> buffs;
 
