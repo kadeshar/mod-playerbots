@@ -111,11 +111,14 @@ void PlayerbotFactory::Init()
     uint32 maxStoreSize = sSpellMgr->GetSpellInfoStoreSize();
     for (uint32 id = 1; id < maxStoreSize; ++id)
     {
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(id);
-        if (!spellInfo)
+        if (id == 47181 || id == 50358 || id == 47242 || id == 52639 || id == 47147 || id == 7218)  // Test Enchant
             continue;
 
-        if (id == 47181 || id == 50358 || id == 47242 || id == 52639 || id == 47147 || id == 7218)  // Test Enchant
+        if (id == 15463) // Legendary Arcane Amalgamation
+            continue;
+
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(id);
+        if (!spellInfo)
             continue;
 
         uint32 requiredLevel = spellInfo->BaseLevel;
@@ -395,7 +398,7 @@ void PlayerbotFactory::Randomize(bool incremental)
     // bot->SaveToDB(false, false);
     if (sPlayerbotAIConfig->randomBotGuildCount > 0)
     {
-        LOG_INFO("playerbots", "Initializing guilds...");
+        LOG_DEBUG("playerbots", "Initializing guilds...");
         InitGuild();
     }
     // bot->SaveToDB(false, false);
