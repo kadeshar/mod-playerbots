@@ -17,6 +17,8 @@ public:
     ChatTriggerContext()
     {
         creators["open items"] = &ChatTriggerContext::open_items;
+        creators["unlock items"] = &ChatTriggerContext::unlock_items;
+        creators["unlock traded item"] = &ChatTriggerContext::unlock_traded_item;
         creators["quests"] = &ChatTriggerContext::quests;
         creators["stats"] = &ChatTriggerContext::stats;
         creators["leave"] = &ChatTriggerContext::leave;
@@ -25,6 +27,7 @@ public:
         creators["log"] = &ChatTriggerContext::log;
         creators["los"] = &ChatTriggerContext::los;
         creators["rpg status"] = &ChatTriggerContext::rpg_status;
+        creators["rpg do quest"] = &ChatTriggerContext::rpg_do_quest;
         creators["aura"] = &ChatTriggerContext::aura;
         creators["drop"] = &ChatTriggerContext::drop;
         creators["share"] = &ChatTriggerContext::share;
@@ -132,6 +135,8 @@ public:
 
 private:
     static Trigger* open_items(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "open items"); }
+    static Trigger* unlock_items(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "unlock items"); }
+    static Trigger* unlock_traded_item(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "unlock traded item"); }
     static Trigger* ra(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "ra"); }
     static Trigger* range(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "range"); }
     static Trigger* flag(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "flag"); }
@@ -214,6 +219,7 @@ private:
     static Trigger* log(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "log"); }
     static Trigger* los(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "los"); }
     static Trigger* rpg_status(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "rpg status"); }
+    static Trigger* rpg_do_quest(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "rpg do quest"); }
     static Trigger* aura(PlayerbotAI* ai) { return new ChatCommandTrigger(ai, "aura"); }
     static Trigger* loot_all(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "add all loot"); }
     static Trigger* release(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "release"); }

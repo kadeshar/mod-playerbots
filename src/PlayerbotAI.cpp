@@ -14,10 +14,13 @@
 #include "BudgetValues.h"
 #include "ChannelMgr.h"
 #include "CharacterPackets.h"
+#include "Common.h"
 #include "CreatureAIImpl.h"
+#include "CreatureData.h"
 #include "EmoteAction.h"
 #include "Engine.h"
 #include "ExternalEventHelper.h"
+#include "GameObjectData.h"
 #include "GameTime.h"
 #include "GuildMgr.h"
 #include "GuildTaskMgr.h"
@@ -32,6 +35,7 @@
 #include "MoveSplineInit.h"
 #include "NewRpgStrategy.h"
 #include "ObjectGuid.h"
+#include "ObjectMgr.h"
 #include "PerformanceMonitor.h"
 #include "Player.h"
 #include "PlayerbotAIConfig.h"
@@ -174,6 +178,7 @@ PlayerbotAI::PlayerbotAI(Player* bot)
     botOutgoingPacketHandlers.AddHandler(SMSG_RESURRECT_REQUEST, "resurrect request");
     botOutgoingPacketHandlers.AddHandler(SMSG_INVENTORY_CHANGE_FAILURE, "cannot equip");
     botOutgoingPacketHandlers.AddHandler(SMSG_TRADE_STATUS, "trade status");
+    botOutgoingPacketHandlers.AddHandler(SMSG_TRADE_STATUS_EXTENDED, "trade status extended");
     botOutgoingPacketHandlers.AddHandler(SMSG_LOOT_RESPONSE, "loot response");
     botOutgoingPacketHandlers.AddHandler(SMSG_ITEM_PUSH_RESULT, "item push result");
     botOutgoingPacketHandlers.AddHandler(SMSG_PARTY_COMMAND_RESULT, "party command");
@@ -204,7 +209,7 @@ PlayerbotAI::PlayerbotAI(Player* bot)
     masterIncomingPacketHandlers.AddHandler(CMSG_PUSHQUESTTOPARTY, "quest share");
     botOutgoingPacketHandlers.AddHandler(SMSG_QUESTUPDATE_COMPLETE, "quest update complete");
     botOutgoingPacketHandlers.AddHandler(SMSG_QUESTUPDATE_ADD_KILL, "quest update add kill");
-    botOutgoingPacketHandlers.AddHandler(SMSG_QUESTUPDATE_ADD_ITEM, "quest update add item");
+    // botOutgoingPacketHandlers.AddHandler(SMSG_QUESTUPDATE_ADD_ITEM, "quest update add item"); // SMSG_QUESTUPDATE_ADD_ITEM no longer used
     botOutgoingPacketHandlers.AddHandler(SMSG_QUEST_CONFIRM_ACCEPT, "confirm quest");
 }
 
@@ -1100,9 +1105,9 @@ void PlayerbotAI::HandleBotOutgoingPacket(WorldPacket const& packet)
                         }
                     }
 
-                    QueueChatResponse(
-                        ChatQueuedReply{msgtype, guid1.GetCounter(), guid2.GetCounter(), message, chanName,
-                                                  name, time(nullptr) + urand(inCombat ? 10 : 5, inCombat ? 25 : 15)});
+                    QueueChatResponse(ChatQueuedReply{msgtype, guid1.GetCounter(), guid2.GetCounter(), message,
+                                                      chanName, name,
+                                                      time(nullptr) + urand(inCombat ? 10 : 5, inCombat ? 25 : 15)});
                     GetAiObjectContext()->GetValue<time_t>("last said", "chat")->Set(time(0) + urand(5, 25));
                     return;
                 }
@@ -1239,10 +1244,10 @@ void PlayerbotAI::ChangeEngine(BotState type)
         switch (type)
         {
             case BOT_STATE_COMBAT:
-                // LOG_DEBUG("playerbots",  "=== {} COMBAT ===", bot->GetName().c_str());
+                ChangeEngineOnCombat();
                 break;
             case BOT_STATE_NON_COMBAT:
-                // LOG_DEBUG("playerbots",  "=== {} NON-COMBAT ===", bot->GetName().c_str());
+                ChangeEngineOnNonCombat();
                 break;
             case BOT_STATE_DEAD:
                 // LOG_DEBUG("playerbots",  "=== {} DEAD ===", bot->GetName().c_str());
@@ -1250,6 +1255,23 @@ void PlayerbotAI::ChangeEngine(BotState type)
             default:
                 break;
         }
+    }
+}
+
+void PlayerbotAI::ChangeEngineOnCombat()
+{
+    if (HasStrategy("stay", BOT_STATE_COMBAT))
+    {
+        aiObjectContext->GetValue<PositionInfo>("pos", "stay")
+            ->Set(PositionInfo(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), bot->GetMapId()));
+    }
+}
+
+void PlayerbotAI::ChangeEngineOnNonCombat()
+{
+    if (HasStrategy("stay", BOT_STATE_NON_COMBAT))
+    {
+        aiObjectContext->GetValue<PositionInfo>("pos", "stay")->Reset();
     }
 }
 
@@ -2287,10 +2309,46 @@ const AreaTableEntry* PlayerbotAI::GetCurrentZone()
 
 std::string PlayerbotAI::GetLocalizedAreaName(const AreaTableEntry* entry)
 {
+    std::string name;
     if (entry)
-        return entry->area_name[sWorld->GetDefaultDbcLocale()];
+    {
+        name = entry->area_name[sWorld->GetDefaultDbcLocale()];
+        if (name.empty())
+            name = entry->area_name[LOCALE_enUS];
+    }
 
-    return "";
+    return name;
+}
+
+std::string PlayerbotAI::GetLocalizedCreatureName(uint32 entry)
+{
+    std::string name;
+    const CreatureLocale* cl = sObjectMgr->GetCreatureLocale(entry);
+    if (cl)
+        ObjectMgr::GetLocaleString(cl->Name, sWorld->GetDefaultDbcLocale(), name);
+    if (name.empty())
+    {
+        CreatureTemplate const* ct = sObjectMgr->GetCreatureTemplate(entry);
+        if (ct)
+            name = ct->Name;
+    }
+    return name;
+}
+
+
+std::string PlayerbotAI::GetLocalizedGameObjectName(uint32 entry)
+{
+    std::string name;
+    const GameObjectLocale* gl = sObjectMgr->GetGameObjectLocale(entry);
+    if (gl)
+        ObjectMgr::GetLocaleString(gl->Name, sWorld->GetDefaultDbcLocale(), name);
+    if (name.empty())
+    {
+        GameObjectTemplate const* gt = sObjectMgr->GetGameObjectTemplate(entry);
+        if (gt)
+            name = gt->name;
+    }
+    return name;
 }
 
 std::vector<Player*> PlayerbotAI::GetPlayersInGroup()
@@ -2807,7 +2865,6 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, Unit* target, bool checkHasSpell,
     if (!target)
         target = bot;
 
-
     if (Pet* pet = bot->GetPet())
         if (pet->HasSpell(spellid))
             return true;
@@ -3000,8 +3057,7 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, GameObject* goTarget, bool checkH
     return false;
 }
 
-bool PlayerbotAI::CanCastSpell(uint32 spellid, float x, float y, float z, bool checkHasSpell,
-                               Item* itemTarget)
+bool PlayerbotAI::CanCastSpell(uint32 spellid, float x, float y, float z, bool checkHasSpell, Item* itemTarget)
 {
     if (!spellid)
         return false;
@@ -3029,7 +3085,7 @@ bool PlayerbotAI::CanCastSpell(uint32 spellid, float x, float y, float z, bool c
     Spell* spell = new Spell(bot, spellInfo, TRIGGERED_NONE);
 
     spell->m_targets.SetDst(x, y, z, 0.f);
-    
+
     Item* item = itemTarget ? itemTarget : aiObjectContext->GetValue<Item*>("item for spell", spellid)->Get();
     spell->m_targets.SetItemTarget(item);
 
@@ -3133,7 +3189,8 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
     Spell* spell = new Spell(bot, spellInfo, TRIGGERED_NONE);
 
     SpellCastTargets targets;
-    if (spellInfo->Targets & TARGET_FLAG_ITEM)
+    if (spellInfo->Effects[0].Effect != SPELL_EFFECT_OPEN_LOCK &&
+        (spellInfo->Targets & TARGET_FLAG_ITEM || spellInfo->Targets & TARGET_FLAG_GAMEOBJECT_ITEM))
     {
         Item* item = itemTarget ? itemTarget : aiObjectContext->GetValue<Item*>("item for spell", spellId)->Get();
         targets.SetItemTarget(item);
@@ -3176,6 +3233,20 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
             targets.SetGOTarget(go);
             faceTo = go;
         }
+        else if (itemTarget)
+        {
+            Player* trader = bot->GetTrader();
+            if (trader)
+            {
+                targets.SetTradeItemTarget(bot);
+                targets.SetUnitTarget(bot);
+                faceTo = trader;
+            }
+            else
+            {
+                targets.SetItemTarget(itemTarget);
+            }
+        }
         else
         {
             if (Unit* creature = GetUnit(loot.guid))
@@ -3212,6 +3283,58 @@ bool PlayerbotAI::CastSpell(uint32 spellId, Unit* target, Item* itemTarget)
         //     LOG_DEBUG("playerbots", "Spell cast failed. - target name: {}, spellid: {}, bot name: {}, result: {}",
         //         target->GetName(), spellId, bot->GetName(), result);
         // }
+        if (HasStrategy("debug spell", BOT_STATE_NON_COMBAT))
+        {
+            std::ostringstream out;
+            out << "Spell cast failed - ";
+            out << "Spell ID: " << spellId << " (" << ChatHelper::FormatSpell(spellInfo) << "), ";
+            out << "Error Code: " << static_cast<int>(result) << " (0x" << std::hex << static_cast<int>(result) << std::dec << "), ";
+            out << "Bot: " << bot->GetName() << ", ";
+    
+            // Check spell target type
+            if (targets.GetUnitTarget())
+            {
+                out << "Target: Unit (" << targets.GetUnitTarget()->GetName() 
+                    << ", Low GUID: " << targets.GetUnitTarget()->GetGUID().GetCounter()
+                    << ", High GUID: " << static_cast<uint32>(targets.GetUnitTarget()->GetGUID().GetHigh()) << "), ";
+            }
+
+            if (targets.GetGOTarget())
+            {
+                out << "Target: GameObject (Low GUID: " << targets.GetGOTarget()->GetGUID().GetCounter()
+                    << ", High GUID: " << static_cast<uint32>(targets.GetGOTarget()->GetGUID().GetHigh()) << "), ";
+            }
+
+            if (targets.GetItemTarget())
+            {
+                out << "Target: Item (Low GUID: " << targets.GetItemTarget()->GetGUID().GetCounter()
+                    << ", High GUID: " << static_cast<uint32>(targets.GetItemTarget()->GetGUID().GetHigh()) << "), ";
+            }
+    
+            // Check if bot is in trade mode
+            if (bot->GetTradeData())
+            {
+                out << "Trade Mode: Active, ";
+                Item* tradeItem = bot->GetTradeData()->GetTraderData()->GetItem(TRADE_SLOT_NONTRADED);
+                if (tradeItem)
+                {
+                    out << "Trade Item: " << tradeItem->GetEntry() 
+                        << " (Low GUID: " << tradeItem->GetGUID().GetCounter()
+                        << ", High GUID: " << static_cast<uint32>(tradeItem->GetGUID().GetHigh()) << "), ";
+                }
+                else
+                {
+                    out << "Trade Item: None, ";
+                }
+            }
+            else
+            {
+                out << "Trade Mode: Inactive, ";
+            }
+    
+            TellMasterNoFacing(out);
+        }
+
         return false;
     }
     // if (spellInfo->Effects[0].Effect == SPELL_EFFECT_OPEN_LOCK || spellInfo->Effects[0].Effect ==
@@ -3308,7 +3431,7 @@ bool PlayerbotAI::CastSpell(uint32 spellId, float x, float y, float z, Item* ite
     Spell* spell = new Spell(bot, spellInfo, TRIGGERED_NONE);
 
     SpellCastTargets targets;
-    if (spellInfo->Targets & TARGET_FLAG_ITEM)
+    if (spellInfo->Targets & TARGET_FLAG_ITEM || spellInfo->Targets & TARGET_FLAG_GAMEOBJECT_ITEM)
     {
         Item* item = itemTarget ? itemTarget : aiObjectContext->GetValue<Item*>("item for spell", spellId)->Get();
         targets.SetItemTarget(item);
@@ -4188,8 +4311,8 @@ bool PlayerbotAI::AllowActive(ActivityType activityType)
         mod = AutoScaleActivity(mod);
     }
 
-    uint32 ActivityNumber = GetFixedBotNumer(100,
-                                    sPlayerbotAIConfig->botActiveAlone * static_cast<float>(mod) / 100 * 0.01f);
+    uint32 ActivityNumber =
+        GetFixedBotNumer(100, sPlayerbotAIConfig->botActiveAlone * static_cast<float>(mod) / 100 * 0.01f);
 
     return ActivityNumber <=
            (sPlayerbotAIConfig->botActiveAlone * mod) /
@@ -4248,7 +4371,8 @@ void PlayerbotAI::RemoveShapeshift()
     RemoveAura("moonkin form");
     RemoveAura("travel form");
     RemoveAura("cat form");
-    RemoveAura("flight form"); bot->RemoveAura(33943);  // The latter added for now as RemoveAura("flight form") currently does not work.
+    RemoveAura("flight form");
+    bot->RemoveAura(33943);  // The latter added for now as RemoveAura("flight form") currently does not work.
     RemoveAura("swift flight form");
     RemoveAura("aquatic form");
     RemoveAura("ghost wolf");
@@ -4835,11 +4959,9 @@ Item* PlayerbotAI::FindAmmo() const
         }
 
         // Search inventory for the correct ammo type
-        return FindItemInInventory([requiredAmmoType](ItemTemplate const* pItemProto) -> bool
-                                   {
-                                       return pItemProto->Class == ITEM_CLASS_PROJECTILE && 
-                                              pItemProto->SubClass == requiredAmmoType;
-                                   });
+        return FindItemInInventory(
+            [requiredAmmoType](ItemTemplate const* pItemProto) -> bool
+            { return pItemProto->Class == ITEM_CLASS_PROJECTILE && pItemProto->SubClass == requiredAmmoType; });
     }
 
     return nullptr;  // No ranged weapon equipped
@@ -4862,6 +4984,52 @@ Item* PlayerbotAI::FindBandage() const
     return FindItemInInventory(
         [](ItemTemplate const* pItemProto) -> bool
         { return pItemProto->Class == ITEM_CLASS_CONSUMABLE && pItemProto->SubClass == ITEM_SUBCLASS_BANDAGE; });
+}
+
+Item* PlayerbotAI::FindOpenableItem() const
+{
+    return FindItemInInventory([this](ItemTemplate const* itemTemplate) -> bool
+    {
+        return (itemTemplate->Flags & ITEM_FLAG_HAS_LOOT) &&
+               (itemTemplate->LockID == 0 || !this->bot->GetItemByEntry(itemTemplate->ItemId)->IsLocked());
+    });
+}
+
+Item* PlayerbotAI::FindLockedItem() const
+{
+    return FindItemInInventory([this](ItemTemplate const* itemTemplate) -> bool
+    {
+        if (!this->bot->HasSkill(SKILL_LOCKPICKING))  // Ensure bot has Lockpicking skill
+            return false;
+
+        if (itemTemplate->LockID == 0)  // Ensure the item is actually locked
+            return false;
+
+        Item* item = this->bot->GetItemByEntry(itemTemplate->ItemId);
+        if (!item || !item->IsLocked())  // Ensure item instance is locked
+            return false;
+
+        // Check if bot has enough Lockpicking skill
+        LockEntry const* lockInfo = sLockStore.LookupEntry(itemTemplate->LockID);
+        if (!lockInfo)
+            return false;
+
+        for (uint8 j = 0; j < 8; ++j)
+        {
+            if (lockInfo->Type[j] == LOCK_KEY_SKILL)
+            {
+                uint32 skillId = SkillByLockType(LockType(lockInfo->Index[j]));
+                if (skillId == SKILL_LOCKPICKING)
+                {
+                    uint32 requiredSkill = lockInfo->Skill[j];
+                    uint32 botSkill = this->bot->GetSkillValue(SKILL_LOCKPICKING);
+                    return botSkill >= requiredSkill;
+                }
+            }
+        }
+
+        return false;
+    });
 }
 
 static const uint32 uPriorizedSharpStoneIds[8] = {ADAMANTITE_SHARPENING_DISPLAYID, FEL_SHARPENING_DISPLAYID,
@@ -6024,9 +6192,10 @@ bool PlayerbotAI::IsHealingSpell(uint32 spellFamilyName, flag96 spellFalimyFlags
     return spellFalimyFlags & healingFlags;
 }
 
-
-SpellFamilyNames PlayerbotAI::Class2SpellFamilyName(uint8 cls) {
-    switch (cls) {
+SpellFamilyNames PlayerbotAI::Class2SpellFamilyName(uint8 cls)
+{
+    switch (cls)
+    {
         case CLASS_WARRIOR:
             return SPELLFAMILY_WARRIOR;
         case CLASS_PALADIN:
