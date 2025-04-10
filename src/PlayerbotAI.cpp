@@ -374,7 +374,9 @@ void PlayerbotAI::UpdateAIGroupMembership()
             PlayerbotAI* leaderAI = GET_PLAYERBOT_AI(leader);
             if (leaderAI && !leaderAI->IsRealPlayer())
             {
-                bot->RemoveFromGroup();
+                WorldPacket* packet = new WorldPacket(CMSG_GROUP_DISBAND);
+                bot->GetSession()->QueuePacket(packet);
+                // bot->RemoveFromGroup();
                 ResetStrategies();
             }
         }
@@ -399,7 +401,9 @@ void PlayerbotAI::UpdateAIGroupMembership()
         }
         if (!hasRealPlayer)
         {
-            bot->RemoveFromGroup();
+            WorldPacket* packet = new WorldPacket(CMSG_GROUP_DISBAND);
+            bot->GetSession()->QueuePacket(packet);
+            // bot->RemoveFromGroup();
             ResetStrategies();
         }
     }
@@ -1534,7 +1538,7 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
             strategyName = "wotlk-hol";  // Halls of Lightning
             break;
         case 603:
-            strategyName = "uld";
+            strategyName = "uld";  // Ulduar
             break;
         case 604:
             strategyName = "wotlk-gd";  // Gundrak
@@ -1551,8 +1555,11 @@ void PlayerbotAI::ApplyInstanceStrategies(uint32 mapId, bool tellMaster)
         case 619:
             strategyName = "wotlk-ok";  // Ahn'kahet: The Old Kingdom
             break;
+        case 624:
+            strategyName = "voa";  // Vault of Archavon
+            break;
         case 631:
-            strategyName = "icc";
+            strategyName = "icc";  // Icecrown Citadel
             break;
         case 632:
             strategyName = "wotlk-fos";  // The Forge of Souls
