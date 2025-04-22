@@ -17,16 +17,34 @@ enum UlduarIDs
     SPELL_OVERLOAD_10_MAN_2 = 63485,
     SPELL_OVERLOAD_25_MAN_2 = 61886,
 
+    //Kologarn
+    NPC_RIGHT_ARM = 32934,
+    NPC_RUBBLE = 33768,
+    SPELL_CRUNCH_ARMOR = 64002,
+
+    SPELL_FOCUSED_EYEBEAM_10_2 = 63346,
+    SPELL_FOCUSED_EYEBEAM_10 = 63347,
+    SPELL_FOCUSED_EYEBEAM_25_2 = 63976,
+    SPELL_FOCUSED_EYEBEAM_25 = 63977,
+    
     // Hodir
     NPC_SNOWPACKED_ICICLE = 33174,
     NPC_TOASTY_FIRE = 33342,
     SPELL_FLASH_FREEZE = 61968,
     SPELL_BITING_COLD_PLAYER_AURA = 62039,
-
+    
     // Freya
     NPC_EONARS_GIFT = 33228,
     GOBJECT_NATURE_BOMB = 194902,
+
+    // Buffs
+    SPELL_FROST_TRAP = 13809,
+    SPELL_FROST_RESISTANCE_AURA = 48945,
+    SPELL_FIRE_RESISTANCE_AURA = 48947,
+    SPELL_ASPECT_OF_THE_WILD = 49071,
 };
+
+const float ULDUAR_KOLOGARN_AXIS_Z_PATHING_ISSUE_DETECT = 420.0f;
 
 //
 // Flame Levi
@@ -97,6 +115,23 @@ public:
     bool IsActive() override;
 };
 
+class RazorscaleFireResistanceTrigger : public Trigger
+{
+public:
+    RazorscaleFireResistanceTrigger(PlayerbotAI* ai) : Trigger(ai, "razorscale fire resistance trigger") {}
+    bool IsActive() override;
+};
+
+//
+// Ignis
+//
+class IgnisFireResistanceTrigger : public Trigger
+{
+public:
+    IgnisFireResistanceTrigger(PlayerbotAI* ai) : Trigger(ai, "ignis fire resistance trigger") {}
+    bool IsActive() override;
+};
+
 //
 // Iron Assembly
 //
@@ -115,6 +150,37 @@ public:
 };
 
 //
+// Kologarn
+//
+class KologarnMarkDpsTargetTrigger : public Trigger
+{
+public:
+    KologarnMarkDpsTargetTrigger(PlayerbotAI* ai) : Trigger(ai, "kologarn mark dps target trigger") {}
+    bool IsActive() override;
+};
+
+class KologarnFallFromFloorTrigger : public Trigger
+{
+public:
+    KologarnFallFromFloorTrigger(PlayerbotAI* ai) : Trigger(ai, "kologarn fall from floor trigger") {}
+    bool IsActive() override;
+};
+
+class KologarnNatureResistanceTrigger : public Trigger
+{
+public:
+    KologarnNatureResistanceTrigger(PlayerbotAI* ai) : Trigger(ai, "kologarn nature resistance trigger") {}
+    bool IsActive() override;
+};
+
+class KologarnRubbleSlowdownTrigger : public Trigger
+{
+public:
+    KologarnRubbleSlowdownTrigger(PlayerbotAI* ai) : Trigger(ai, "kologarn rubble slowdown trigger") {}
+    bool IsActive() override;
+};
+
+//
 // Hodir
 //
 class HodirBitingColdTrigger : public Trigger
@@ -128,6 +194,13 @@ class HodirNearSnowpackedIcicleTrigger : public Trigger
 {
 public:
     HodirNearSnowpackedIcicleTrigger(PlayerbotAI* ai) : Trigger(ai, "hodir near snowpacked icicle") {}
+    bool IsActive() override;
+};
+
+class HodirFrostResistanceTrigger : public Trigger
+{
+public:
+    HodirFrostResistanceTrigger(PlayerbotAI* ai) : Trigger(ai, "hodir frost resistance trigger") {}
     bool IsActive() override;
 };
 

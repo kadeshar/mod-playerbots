@@ -106,10 +106,37 @@ public:
     bool isUseful() override;
 };
 
+class RazorscaleFireResistanceAction : public Action
+{
+public:
+    RazorscaleFireResistanceAction(PlayerbotAI* botAI) : Action(botAI, "razorscale fire resistance action") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+//
+// Ignis
+//
+class IgnisFireResistanceAction : public Action
+{
+public:
+    IgnisFireResistanceAction(PlayerbotAI* botAI) : Action(botAI, "ignis fire resistance action") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
 class HodirMoveSnowpackedIcicleAction : public MovementAction
 {
 public:
     HodirMoveSnowpackedIcicleAction(PlayerbotAI* botAI) : MovementAction(botAI, "hodir move snowpacked icicle") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+class HodirFrostResistanceAction : public Action
+{
+public:
+    HodirFrostResistanceAction(PlayerbotAI* botAI) : Action(botAI, "hodir frost resistance action") {}
     bool Execute(Event event) override;
     bool isUseful() override;
 };
@@ -128,6 +155,37 @@ public:
     IronAssemblyOverloadAction(PlayerbotAI* botAI) : MovementAction(botAI, "iron assembly overload action") {}
     bool Execute(Event event) override;
     bool isUseful() override;
+};
+
+class KologarnMarkDpsTargetAction : public Action
+{
+public:
+    KologarnMarkDpsTargetAction(PlayerbotAI* botAI) : Action(botAI, "kologarn mark dps target action") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+class KologarnFallFromFloorAction : public Action
+{
+public:
+    KologarnFallFromFloorAction(PlayerbotAI* botAI) : Action(botAI, "kologarn fall from floor action") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+class KologarnNatureResistanceAction : public Action
+{
+public:
+    KologarnNatureResistanceAction(PlayerbotAI* botAI) : Action(botAI, "kologarn nature resistance action") {}
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+class KologarnRubbleSlowdownAction : public Action
+{
+public:
+    KologarnRubbleSlowdownAction(PlayerbotAI* botAI) : Action(botAI, "kologarn rubble slowdown action") {}
+    bool Execute(Event event) override;
 };
 
 class HodirBitingColdJumpAction : public MovementAction

@@ -11,6 +11,8 @@
 #include "SharedDefines.h"
 #include "Trigger.h"
 #include "Vehicle.h"
+#include <HunterBuffStrategies.h>
+#include <PaladinBuffStrategies.h>
 
 const std::vector<uint32> availableVehicles = {NPC_VEHICLE_CHOPPER, NPC_SALVAGED_DEMOLISHER,
                                                NPC_SALVAGED_DEMOLISHER_TURRET, NPC_SALVAGED_SIEGE_ENGINE,
@@ -36,11 +38,11 @@ bool FlameLeviathanVehicleNearTrigger::IsActive()
 {
     if (bot->GetVehicle())
         return false;
-    
+
     Player* master = botAI->GetMaster();
     if (!master)
         return false;
-    
+
     if (!master->GetVehicle())
         return false;
 
@@ -50,22 +52,22 @@ bool FlameLeviathanVehicleNearTrigger::IsActive()
 bool RazorscaleFlyingAloneTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "razorscale");
-    if (!boss) 
+    if (!boss)
     {
-        return false; 
+        return false;
     }
-    
+
     // Check if the boss is flying
     if (boss->GetPositionZ() < RazorscaleBossHelper::RAZORSCALE_FLYING_Z_THRESHOLD)
     {
-        return false; 
+        return false;
     }
 
     // Get the list of attackers
     GuidVector attackers = context->GetValue<GuidVector>("attackers")->Get();
     if (attackers.empty())
     {
-        return true; // No attackers implies flying alone
+        return true;  // No attackers implies flying alone
     }
 
     std::vector<Unit*> dark_rune_adds;
@@ -80,8 +82,8 @@ bool RazorscaleFlyingAloneTrigger::IsActive()
         uint32 entry = unit->GetEntry();
 
         // Check for valid dark rune entries
-        if (entry == RazorscaleBossHelper::UNIT_DARK_RUNE_WATCHER || 
-            entry == RazorscaleBossHelper::UNIT_DARK_RUNE_GUARDIAN || 
+        if (entry == RazorscaleBossHelper::UNIT_DARK_RUNE_WATCHER ||
+            entry == RazorscaleBossHelper::UNIT_DARK_RUNE_GUARDIAN ||
             entry == RazorscaleBossHelper::UNIT_DARK_RUNE_SENTINEL)
         {
             dark_rune_adds.push_back(unit);
@@ -92,11 +94,10 @@ bool RazorscaleFlyingAloneTrigger::IsActive()
     return dark_rune_adds.empty();
 }
 
-
 bool RazorscaleDevouringFlamesTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "razorscale");
-    if (!boss) 
+    if (!boss)
         return false;
 
     GuidVector npcs = AI_VALUE(GuidVector, "nearest hostile npcs");
@@ -115,7 +116,7 @@ bool RazorscaleDevouringFlamesTrigger::IsActive()
 bool RazorscaleAvoidSentinelTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "razorscale");
-    if (!boss) 
+    if (!boss)
         return false;
 
     GuidVector npcs = AI_VALUE(GuidVector, "nearest hostile npcs");
@@ -134,7 +135,7 @@ bool RazorscaleAvoidSentinelTrigger::IsActive()
 bool RazorscaleAvoidWhirlwindTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "razorscale");
-    if (!boss) 
+    if (!boss)
         return false;
 
     GuidVector npcs = AI_VALUE(GuidVector, "nearest hostile npcs");
@@ -142,7 +143,8 @@ bool RazorscaleAvoidWhirlwindTrigger::IsActive()
     {
         Unit* unit = botAI->GetUnit(npc);
         if (unit && unit->GetEntry() == RazorscaleBossHelper::UNIT_DARK_RUNE_SENTINEL &&
-            (unit->HasAura(RazorscaleBossHelper::SPELL_SENTINEL_WHIRLWIND) || unit->GetCurrentSpell(CURRENT_CHANNELED_SPELL)))
+            (unit->HasAura(RazorscaleBossHelper::SPELL_SENTINEL_WHIRLWIND) ||
+             unit->GetCurrentSpell(CURRENT_CHANNELED_SPELL)))
         {
             return true;
         }
@@ -154,15 +156,15 @@ bool RazorscaleAvoidWhirlwindTrigger::IsActive()
 bool RazorscaleGroundedTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "razorscale");
-    if (!boss) 
+    if (!boss)
     {
-        return false; 
+        return false;
     }
-    
+
     // Check if the boss is flying
     if (boss->GetPositionZ() < RazorscaleBossHelper::RAZORSCALE_FLYING_Z_THRESHOLD)
     {
-        return true; 
+        return true;
     }
     return false;
 }
@@ -201,7 +203,7 @@ bool RazorscaleHarpoonAvailableTrigger::IsActive()
         {
             if (RazorscaleBossHelper::IsHarpoonReady(harpoonGO))
             {
-                return true; // At least one harpoon is available and ready to be fired
+                return true;  // At least one harpoon is available and ready to be fired
             }
         }
     }
@@ -242,6 +244,100 @@ bool RazorscaleFuseArmorTrigger::IsActive()
     return false;
 }
 
+bool RazorscaleFireResistanceTrigger::IsActive()
+{
+    // Check boss and it is alive
+    Unit* boss = AI_VALUE2(Unit*, "find target", "razorscale");
+    if (!boss || !boss->IsAlive())
+        return false;
+
+    // Check if bot is paladin
+    if (bot->getClass() != CLASS_PALADIN)
+        return false;
+
+    // Check if bot have fire resistance aura
+    if (bot->HasAura(SPELL_FIRE_RESISTANCE_AURA))
+        return false;
+
+    // Check if bot dont have already have fire resistance strategy
+    PaladinFireResistanceStrategy paladinFireResistanceStrategy(botAI);
+    if (botAI->HasStrategy(paladinFireResistanceStrategy.getName(), BotState::BOT_STATE_COMBAT))
+        return false;
+
+    // Check that the bot actually knows the spell
+    if (!bot->HasActiveSpell(SPELL_FIRE_RESISTANCE_AURA))
+        return false;
+
+    // Get the group and ensure it's a raid group
+    Group* group = bot->GetGroup();
+    if (!group || !group->isRaidGroup())
+        return false;
+
+    // Iterate through group members to find the first alive paladin
+    for (GroupReference* gref = group->GetFirstMember(); gref; gref = gref->next())
+    {
+        Player* member = gref->GetSource();
+        if (!member || !member->IsAlive())
+            continue;
+
+        // Check if the member is a hunter
+        if (member->getClass() == CLASS_PALADIN)
+        {
+            // Return true only if the current bot is the first alive paladin
+            return member == bot;
+        }
+    }
+
+    return false;
+}
+
+bool IgnisFireResistanceTrigger::IsActive()
+{
+    // Check boss and it is alive
+    Unit* boss = AI_VALUE2(Unit*, "find target", "ignis the furnace master");
+    if (!boss || !boss->IsAlive())
+        return false;
+
+    // Check if bot is paladin
+    if (bot->getClass() != CLASS_PALADIN)
+        return false;
+
+    // Check if bot have fire resistance aura
+    if (bot->HasAura(SPELL_FIRE_RESISTANCE_AURA))
+        return false;
+
+    // Check if bot dont have already have fire resistance strategy
+    PaladinFireResistanceStrategy paladinFireResistanceStrategy(botAI);
+    if (botAI->HasStrategy(paladinFireResistanceStrategy.getName(), BotState::BOT_STATE_COMBAT))
+        return false;
+
+    // Check that the bot actually knows the spell
+    if (!bot->HasActiveSpell(SPELL_FIRE_RESISTANCE_AURA))
+        return false;
+
+    // Get the group and ensure it's a raid group
+    Group* group = bot->GetGroup();
+    if (!group || !group->isRaidGroup())
+        return false;
+
+    // Iterate through group members to find the first alive paladin
+    for (GroupReference* gref = group->GetFirstMember(); gref; gref = gref->next())
+    {
+        Player* member = gref->GetSource();
+        if (!member || !member->IsAlive())
+            continue;
+
+        // Check if the member is a hunter
+        if (member->getClass() == CLASS_PALADIN)
+        {
+            // Return true only if the current bot is the first alive paladin
+            return member == bot;
+        }
+    }
+
+    return false;
+}
+
 bool IronAssemblyLightningTendrilsTrigger::IsActive()
 {
     // Check boss and it is alive
@@ -277,6 +373,164 @@ bool IronAssemblyOverloadTrigger::IsActive()
            boss->HasAura(SPELL_OVERLOAD_10_MAN_2) || boss->HasAura(SPELL_OVERLOAD_25_MAN_2);
 }
 
+bool KologarnMarkDpsTargetTrigger::IsActive()
+{
+    // Check boss and it is alive
+    Unit* boss = AI_VALUE2(Unit*, "find target", "kologarn");
+    if (!boss || !boss->IsAlive())
+        return false;
+
+    // Only tank bot can mark target
+    if (!botAI->IsTank(bot))
+        return false;
+
+    // Get current raid dps target
+    Group* group = bot->GetGroup();
+    if (!group)
+        return false;
+
+    int8 skullIndex = 7;
+    ObjectGuid currentSkullTarget = group->GetTargetIcon(skullIndex);
+    Unit* currentSkullUnit = botAI->GetUnit(currentSkullTarget);
+
+    // Check that rubble is marked
+    if (currentSkullUnit && currentSkullUnit->IsAlive() && currentSkullUnit->GetEntry() == NPC_RUBBLE)
+    {
+        return false;  // Skull marker is already set on rubble
+    }
+
+    // Check that there is rubble to mark
+    GuidVector targets = AI_VALUE(GuidVector, "possible targets");
+    Unit* target = nullptr;
+    for (auto i = targets.begin(); i != targets.end(); ++i)
+    {
+        target = botAI->GetUnit(*i);
+        if (!target)
+            continue;
+
+        uint32 creatureId = target->GetEntry();
+        if (target->GetEntry() == NPC_RUBBLE && target->IsAlive())
+        {
+            return true;  // Found a rubble to mark
+        }
+    }
+
+    // Check that right arm is marked
+    if (currentSkullUnit && currentSkullUnit->IsAlive() && currentSkullUnit->GetEntry() == NPC_RIGHT_ARM)
+    {
+        return false;  // Skull marker is already set on right arm
+    }
+
+    // Check that there is right arm to mark
+    Unit* rightArm = AI_VALUE2(Unit*, "find target", "right arm");
+    if (rightArm && rightArm->IsAlive())
+    {
+        return true;  // Found a right arm to mark
+    }
+
+    // Check that main body is marked
+    if (currentSkullUnit && currentSkullUnit->IsAlive() && currentSkullUnit->GetEntry() == NPC_KOLOGARN)
+    {
+        return false;  // Skull marker is already set on main body
+    }
+
+    // Main body is not marked
+    return true;
+}
+
+bool KologarnFallFromFloorTrigger::IsActive()
+{
+    // Check boss and it is alive
+    Unit* boss = AI_VALUE2(Unit*, "find target", "kologarn");
+    if (!boss || !boss->IsAlive())
+    {
+        return false;
+    }
+
+    // Check if bot is on the floor
+    return bot->GetPositionZ() < ULDUAR_KOLOGARN_AXIS_Z_PATHING_ISSUE_DETECT;
+}
+
+bool KologarnNatureResistanceTrigger::IsActive()
+{
+    // Check boss and it is alive
+    Unit* boss = AI_VALUE2(Unit*, "find target", "kologarn");
+    if (!boss || !boss->IsAlive())
+        return false;
+
+    // Check if bot is alive
+    if (!bot->IsAlive())
+        return false;
+
+    // Check if bot is hunter
+    if (bot->getClass() != CLASS_HUNTER)
+        return false;
+
+    // Check if bot have nature resistance aura
+    if (bot->HasAura(SPELL_ASPECT_OF_THE_WILD))
+        return false;
+
+    // Check if bot dont have already setted nature resistance aura
+    HunterNatureResistanceStrategy hunterNatureResistanceStrategy(botAI);
+    if (botAI->HasStrategy(hunterNatureResistanceStrategy.getName(), BotState::BOT_STATE_COMBAT))
+        return false;
+
+    // Check that the bot actually knows Aspect of the Wild
+    if (!bot->HasActiveSpell(SPELL_ASPECT_OF_THE_WILD))
+        return false;
+
+    // Get the group and ensure it's a raid group
+    Group* group = bot->GetGroup();
+    if (!group || !group->isRaidGroup())
+        return false;
+
+    // Iterate through group members to find the first alive hunter
+    for (GroupReference* gref = group->GetFirstMember(); gref; gref = gref->next())
+    {
+        Player* member = gref->GetSource();
+        if (!member || !member->IsAlive())
+            continue;
+
+        // Check if the member is a hunter
+        if (member->getClass() == CLASS_HUNTER)
+        {
+            // Return true only if the current bot is the first alive hunter
+            return member == bot;
+        }
+    }
+
+    return false;
+}
+
+bool KologarnRubbleSlowdownTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "kologarn");
+
+    // Check boss and it is alive
+    if (!boss || !boss->IsAlive())
+        return false;
+
+    // Check if bot is hunter
+    if (bot->getClass() != CLASS_HUNTER)
+        return false;
+
+    Group* group = bot->GetGroup();
+    if (!group)
+        return false;
+
+    // Check that the current skull mark is set on rubble
+    int8 skullIndex = 7;
+    ObjectGuid currentSkullTarget = group->GetTargetIcon(skullIndex);
+    Unit* currentSkullUnit = botAI->GetUnit(currentSkullTarget);
+    if (!currentSkullUnit || !currentSkullUnit->IsAlive() || currentSkullUnit->GetEntry() != NPC_RUBBLE)
+        return false;
+
+    if (bot->HasSpellCooldown(SPELL_FROST_TRAP))
+        return false;
+
+    return true;
+}
+
 bool HodirBitingColdTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "hodir");
@@ -295,7 +549,7 @@ bool HodirBitingColdTrigger::IsActive()
            !botAI->GetAura("biting cold", master, false, false, 2);
 }
 
-//Snowpacked Icicle Target
+// Snowpacked Icicle Target
 bool HodirNearSnowpackedIcicleTrigger::IsActive()
 {
     // Check boss and it is alive
@@ -323,6 +577,53 @@ bool HodirNearSnowpackedIcicleTrigger::IsActive()
     }
 
     return true;
+}
+
+bool HodirFrostResistanceTrigger::IsActive()
+{
+    // Check boss and it is alive
+    Unit* boss = AI_VALUE2(Unit*, "find target", "hodir");
+    if (!boss || !boss->IsAlive())
+        return false;
+
+    // Check if bot is paladin
+    if (bot->getClass() != CLASS_PALADIN)
+        return false;
+
+    // Check if bot have frost resistance aura
+    if (bot->HasAura(SPELL_FROST_RESISTANCE_AURA))
+        return false;
+
+    // Check if bot dont have already have frost resistance strategy
+    PaladinFrostResistanceStrategy paladinFrostResistanceStrategy(botAI);
+    if (botAI->HasStrategy(paladinFrostResistanceStrategy.getName(), BotState::BOT_STATE_COMBAT))
+        return false;
+
+    // Check that the bot actually knows the spell
+    if (!bot->HasActiveSpell(SPELL_FROST_RESISTANCE_AURA))
+        return false;
+
+    // Get the group and ensure it's a raid group
+    Group* group = bot->GetGroup();
+    if (!group || !group->isRaidGroup())
+        return false;
+
+    // Iterate through group members to find the first alive paladin
+    for (GroupReference* gref = group->GetFirstMember(); gref; gref = gref->next())
+    {
+        Player* member = gref->GetSource();
+        if (!member || !member->IsAlive())
+            continue;
+
+        // Check if the member is a hunter
+        if (member->getClass() == CLASS_PALADIN)
+        {
+            // Return true only if the current bot is the first alive paladin
+            return member == bot;
+        }
+    }
+
+    return false;
 }
 
 bool FreyaNearNatureBombTrigger::IsActive()
