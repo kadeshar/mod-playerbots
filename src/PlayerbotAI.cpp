@@ -1423,12 +1423,21 @@ void PlayerbotAI::DoNextAction(bool min)
             master = newMaster;
             botAI->SetMaster(newMaster);
             botAI->ResetStrategies();
-            botAI->ChangeStrategy("+follow", BOT_STATE_NON_COMBAT);
+            
+            if (!bot->InBattleground()) 
+            {
+                botAI->ChangeStrategy("+follow", BOT_STATE_NON_COMBAT);
 
-            if (botAI->GetMaster() == botAI->GetGroupMaster())
-                botAI->TellMaster("Hello, I follow you!");
+                if (botAI->GetMaster() == botAI->GetGroupMaster())
+                    botAI->TellMaster("Hello, I follow you!");
+                else
+                    botAI->TellMaster(!urand(0, 2) ? "Hello!" : "Hi!");
+            }
             else
-                botAI->TellMaster(!urand(0, 2) ? "Hello!" : "Hi!");
+            {
+                // we're in a battleground, stay with the pack and focus on objective 
+                botAI->ChangeStrategy("-follow", BOT_STATE_NON_COMBAT);
+            }
         }
     }
 
@@ -4321,7 +4330,7 @@ bool PlayerbotAI::AllowActive(ActivityType activityType)
     // #######################################################################################
 
     // Below is code to have a specified % of bots active at all times.
-    // The default is 10%. With 0.1% of all bots going active or inactive each minute.
+    // The default is 100%. With 1% of all bots going active or inactive each minute.
     uint32 mod = sPlayerbotAIConfig->botActiveAlone > 100 ? 100 : sPlayerbotAIConfig->botActiveAlone;
     if (sPlayerbotAIConfig->botActiveAloneSmartScale &&
         bot->GetLevel() >= sPlayerbotAIConfig->botActiveAloneSmartScaleWhenMinLevel &&

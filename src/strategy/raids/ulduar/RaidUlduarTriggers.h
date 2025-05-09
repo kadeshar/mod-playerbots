@@ -16,6 +16,7 @@ enum UlduarIDs
     SPELL_OVERLOAD_25_MAN = 63481,
     SPELL_OVERLOAD_10_MAN_2 = 63485,
     SPELL_OVERLOAD_25_MAN_2 = 61886,
+    SPELL_RUNE_OF_POWER = 64320,
 
     //Kologarn
     NPC_RIGHT_ARM = 32934,
@@ -34,17 +35,25 @@ enum UlduarIDs
     SPELL_BITING_COLD_PLAYER_AURA = 62039,
     
     // Freya
+    NPC_SNAPLASHER = 32916,
+    NPC_STORM_LASHER = 32919,
+    NPC_DETONATING_LASHER = 32918,
+    NPC_ANCIENT_WATER_SPIRIT = 33202,
+    NPC_ANCIENT_CONSERVATOR = 33203,
+    NPC_HEALTHY_SPORE = 33215,
     NPC_EONARS_GIFT = 33228,
     GOBJECT_NATURE_BOMB = 194902,
 
     // Buffs
-    SPELL_FROST_TRAP = 13809,
-    SPELL_FROST_RESISTANCE_AURA = 48945,
-    SPELL_FIRE_RESISTANCE_AURA = 48947,
-    SPELL_ASPECT_OF_THE_WILD = 49071,
+    SPELL_FROST_TRAP = 13809
 };
 
+const int8 skullIndex = 7;  // Skull
+const int8 crossIndex = 6;  // Cross
+const int8 moonIndex = 4;   // Moon
+
 const float ULDUAR_KOLOGARN_AXIS_Z_PATHING_ISSUE_DETECT = 420.0f;
+const float ULDUAR_KOLOGARN_EYEBEAM_RADIUS = 3.0f;
 
 //
 // Flame Levi
@@ -115,23 +124,6 @@ public:
     bool IsActive() override;
 };
 
-class RazorscaleFireResistanceTrigger : public Trigger
-{
-public:
-    RazorscaleFireResistanceTrigger(PlayerbotAI* ai) : Trigger(ai, "razorscale fire resistance trigger") {}
-    bool IsActive() override;
-};
-
-//
-// Ignis
-//
-class IgnisFireResistanceTrigger : public Trigger
-{
-public:
-    IgnisFireResistanceTrigger(PlayerbotAI* ai) : Trigger(ai, "ignis fire resistance trigger") {}
-    bool IsActive() override;
-};
-
 //
 // Iron Assembly
 //
@@ -146,6 +138,13 @@ class IronAssemblyOverloadTrigger : public Trigger
 {
 public:
     IronAssemblyOverloadTrigger(PlayerbotAI* ai) : Trigger(ai, "iron assembly overload trigger") {}
+    bool IsActive() override;
+};
+
+class IronAssemblyRuneOfPowerTrigger : public Trigger
+{
+public:
+    IronAssemblyRuneOfPowerTrigger(PlayerbotAI* ai) : Trigger(ai, "iron assembly rune of power trigger") {}
     bool IsActive() override;
 };
 
@@ -166,17 +165,38 @@ public:
     bool IsActive() override;
 };
 
-class KologarnNatureResistanceTrigger : public Trigger
-{
-public:
-    KologarnNatureResistanceTrigger(PlayerbotAI* ai) : Trigger(ai, "kologarn nature resistance trigger") {}
-    bool IsActive() override;
-};
-
 class KologarnRubbleSlowdownTrigger : public Trigger
 {
 public:
     KologarnRubbleSlowdownTrigger(PlayerbotAI* ai) : Trigger(ai, "kologarn rubble slowdown trigger") {}
+    bool IsActive() override;
+};
+
+class KologarnEyebeamTrigger : public Trigger
+{
+public:
+    KologarnEyebeamTrigger(PlayerbotAI* ai) : Trigger(ai, "kologarn eyebeam trigger") {}
+    bool IsActive() override;
+};
+
+class KologarnAttackDpsTargetTrigger : public Trigger
+{
+public:
+    KologarnAttackDpsTargetTrigger(PlayerbotAI* ai) : Trigger(ai, "kologarn attack dps target trigger") {}
+    bool IsActive() override;
+};
+
+class KologarnRtiTargetTrigger : public Trigger
+{
+public:
+    KologarnRtiTargetTrigger(PlayerbotAI* ai) : Trigger(ai, "kologarn rti target trigger") {}
+    bool IsActive() override;
+};
+
+class KologarnCrunchArmorTrigger : public Trigger
+{
+public:
+    KologarnCrunchArmorTrigger(PlayerbotAI* ai) : Trigger(ai, "kologarn crunch armor trigger") {}
     bool IsActive() override;
 };
 
@@ -197,13 +217,6 @@ public:
     bool IsActive() override;
 };
 
-class HodirFrostResistanceTrigger : public Trigger
-{
-public:
-    HodirFrostResistanceTrigger(PlayerbotAI* ai) : Trigger(ai, "hodir frost resistance trigger") {}
-    bool IsActive() override;
-};
-
 //
 // Freya
 //
@@ -214,10 +227,17 @@ public:
     bool IsActive() override;
 };
 
-class FreyaTankNearEonarsGiftTrigger : public Trigger
+class FreyaMarkDpsTargetTrigger : public Trigger
 {
 public:
-    FreyaTankNearEonarsGiftTrigger(PlayerbotAI* ai) : Trigger(ai, "freya tank near eonars gift") {}
+    FreyaMarkDpsTargetTrigger(PlayerbotAI* ai) : Trigger(ai, "freya mark dps target trigger") {}
+    bool IsActive() override;
+};
+
+class FreyaMoveToHealingSporeTrigger : public Trigger
+{
+public:
+    FreyaMoveToHealingSporeTrigger(PlayerbotAI* ai) : Trigger(ai, "freya move to healing spore trigger") {}
     bool IsActive() override;
 };
 

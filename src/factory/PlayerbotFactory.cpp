@@ -2200,15 +2200,33 @@ void PlayerbotFactory::InitSkills()
     //uint32 maxValue = level * 5; //not used, line marked for removal.
     bot->UpdateSkillsForLevel();
 
-    bot->SetSkill(SKILL_RIDING, 0, 0, 0);
+    auto SafeLearn = [this](uint32 spellId)
+    {
+        if (!bot->HasSpell(spellId))
+            bot->learnSpell(spellId, false, true); // Avoid duplicate attempts in DB
+    };
+
+    // Define Riding skill according to level
+    if (bot->GetLevel() >= 70)
+        bot->SetSkill(SKILL_RIDING, 300, 300, 300);
+    else if (bot->GetLevel() >= 60)
+        bot->SetSkill(SKILL_RIDING, 225, 225, 225);
+    else if (bot->GetLevel() >= 40)
+        bot->SetSkill(SKILL_RIDING, 150, 150, 150);
+    else if (bot->GetLevel() >= 20)
+        bot->SetSkill(SKILL_RIDING, 75, 75, 75);
+    else
+        bot->SetSkill(SKILL_RIDING, 0, 0, 0);
+    
+    // Safe learning of mount spells
     if (bot->GetLevel() >= sPlayerbotAIConfig->useGroundMountAtMinLevel)
-        bot->learnSpell(33388);
+        SafeLearn(33388); // Apprentice
     if (bot->GetLevel() >= sPlayerbotAIConfig->useFastGroundMountAtMinLevel)
-        bot->learnSpell(33391);
+        SafeLearn(33391); // Journeyman
     if (bot->GetLevel() >= sPlayerbotAIConfig->useFlyMountAtMinLevel)
-        bot->learnSpell(34090);
+        SafeLearn(34090); // Expert
     if (bot->GetLevel() >= sPlayerbotAIConfig->useFastFlyMountAtMinLevel)
-        bot->learnSpell(34091);
+        SafeLearn(34091); // Artisan
 
     uint32 skillLevel = bot->GetLevel() < 40 ? 0 : 1;
     uint32 dualWieldLevel = bot->GetLevel() < 20 ? 0 : 1;
@@ -2755,7 +2773,7 @@ void PlayerbotFactory::AddPrevQuests(uint32 questId, std::list<uint32>& questIds
     }
 }
 
-void PlayerbotFactory::InitQuests(std::list<uint32>& questMap)
+void PlayerbotFactory::InitQuests(std::list<uint32>& questMap, bool withRewardItem)
 {
     uint32 count = 0;
     for (std::list<uint32>::iterator i = questMap.begin(); i != questMap.end(); ++i)
@@ -2768,17 +2786,30 @@ void PlayerbotFactory::InitQuests(std::list<uint32>& questMap)
             continue;
 
         bot->SetQuestStatus(questId, QUEST_STATUS_COMPLETE);
-        bot->RewardQuest(quest, 0, bot, false);
+        // set reward to 5 to skip majority quest reward
+        uint32 reward = withRewardItem ? 0 : 5;
+        bot->RewardQuest(quest, reward, bot, false);
+        
+        if (!withRewardItem)
+        {
+            // destroy the quest reward item
+            if (uint32 itemId = quest->RewardChoiceItemId[reward])
+            {
+                bot->DestroyItemCount(itemId, quest->RewardChoiceItemCount[reward], true);
+            }
 
-        // LOG_INFO("playerbots", "Bot {} ({} level) rewarded quest {}: {} (MinLevel={}, QuestLevel={})",
-        //          bot->GetName().c_str(), bot->GetLevel(), questId, quest->GetTitle().c_str(), quest->GetMinLevel(),
-        //          quest->GetQuestLevel());
-
-        if (!(count++ % 10))
-            ClearInventory();
+            if (quest->GetRewItemsCount())
+            {
+                for (uint32 i = 0; i < quest->GetRewItemsCount(); ++i)
+                {
+                    if (uint32 itemId = quest->RewardItemId[i])
+                    {
+                        bot->DestroyItemCount(itemId, quest->RewardItemIdCount[i], true);
+                    }
+                }
+            }
+        }
     }
-
-    ClearInventory();
 }
 
 void PlayerbotFactory::InitInstanceQuests()
@@ -2786,8 +2817,8 @@ void PlayerbotFactory::InitInstanceQuests()
     // Yunfan: use configuration instead of hard code
     uint32 currentXP = bot->GetUInt32Value(PLAYER_XP);
     // LOG_INFO("playerbots", "Initializing quests...");
-    InitQuests(classQuestIds);
-    InitQuests(specialQuestIds);
+    InitQuests(classQuestIds, false);
+    InitQuests(specialQuestIds, false);
 
     // quest rewards boost bot level, so reduce back
     bot->GiveLevel(level);
@@ -4429,7 +4460,7 @@ void PlayerbotFactory::InitAttunementQuests()
         // Only complete quests that haven't been finished yet
         if (!questsToComplete.empty())
         {
-            InitQuests(questsToComplete);
+            InitQuests(questsToComplete, false);
         }
     }
 

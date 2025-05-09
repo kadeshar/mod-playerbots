@@ -37,14 +37,28 @@ bool IccLmTankPositionAction::Execute(Event event)
     if (!boss)
         return false;
 
-    if (botAI->IsTank(bot) || botAI->IsMainTank(bot) || botAI->IsAssistTank(bot))
+    if (botAI->IsTank(bot))
     {
-        if (bot->GetExactDist2d(ICC_LM_TANK_POSITION) > 15.0f)
-            return MoveTo(bot->GetMapId(), ICC_LM_TANK_POSITION.GetPositionX(),
-                          ICC_LM_TANK_POSITION.GetPositionY(), ICC_LM_TANK_POSITION.GetPositionZ(), 
-                          false, false, false, false, MovementPriority::MOVEMENT_COMBAT);
-        else
-            return false;
+        if ((botAI->HasAggro(boss) && botAI->IsMainTank(bot)) || botAI->IsAssistTank(bot))
+        {
+            float distance = bot->GetExactDist2d(ICC_LM_TANK_POSITION.GetPositionX(), ICC_LM_TANK_POSITION.GetPositionY());
+            if (distance > 3.0f)
+            {
+                // Calculate direction vector
+                float dirX = ICC_LM_TANK_POSITION.GetPositionX() - bot->GetPositionX();
+                float dirY = ICC_LM_TANK_POSITION.GetPositionY() - bot->GetPositionY();
+                float length = sqrt(dirX * dirX + dirY * dirY);
+                dirX /= length;
+                dirY /= length;
+
+                // Move in increments of 3.0f
+                float moveX = bot->GetPositionX() + dirX * 3.0f;
+                float moveY = bot->GetPositionY() + dirY * 3.0f;
+
+                return MoveTo(bot->GetMapId(), moveX, moveY, bot->GetPositionZ(), false, false, false, false,
+                              MovementPriority::MOVEMENT_COMBAT);
+            }
+        }
     }
 
     return false;
@@ -66,8 +80,26 @@ bool IccSpikeAction::Execute(Event event)
     Aura* bossaura = botAI->GetAura("Bone Storm", boss);
 
     if (boss->isInFront(bot) && !botAI->IsTank(bot) && !bossaura)
-        return MoveTo(bot->GetMapId(), -390.6757f, 2230.5283f, 41.99232f, false, false, false, true,
-                      MovementPriority::MOVEMENT_FORCED);
+    {
+        float distance = bot->GetExactDist2d(-390.6757f, 2230.5283f);
+        if (distance > 3.0f)
+        {
+            // Calculate direction vector
+            float dirX = -390.6757f - bot->GetPositionX();
+            float dirY = 2230.5283f - bot->GetPositionY();
+            float length = sqrt(dirX * dirX + dirY * dirY);
+            dirX /= length;
+            dirY /= length;
+
+            // Move in increments of 3.0f
+            float moveX = bot->GetPositionX() + dirX * 3.0f;
+            float moveY = bot->GetPositionY() + dirY * 3.0f;
+
+            return MoveTo(bot->GetMapId(), moveX, moveY, bot->GetPositionZ(), false, false, false, false,
+                          MovementPriority::MOVEMENT_COMBAT);
+        }
+        return false;
+    }
 
     if (!botAI->IsTank(bot))
         return false;
@@ -196,10 +228,34 @@ bool IccAddsLadyDeathwhisperAction::Execute(Event event)
 
     if (botAI->IsTank(bot) && boss->GetHealthPct() < 95.0f)
     {
-        if (bot->GetExactDist2d(ICC_LDW_TANK_POSTION) > 20.0f)
-        return MoveTo(bot->GetMapId(), ICC_LDW_TANK_POSTION.GetPositionX(),
-                      ICC_LDW_TANK_POSTION.GetPositionY(), ICC_LDW_TANK_POSTION.GetPositionZ(), false,
-                      false, false, false, MovementPriority::MOVEMENT_COMBAT);
+        // Check if the bot is not the victim of a shade with entry 38222
+        GuidVector npcs = AI_VALUE(GuidVector, "nearest hostile npcs");
+        for (auto& npc : npcs)
+        {
+            Unit* unit = botAI->GetUnit(npc);
+            if (unit && unit->GetEntry() == 38222 && unit->GetVictim() == bot)
+            {
+                return false;  // Exit if the bot is the victim of the shade
+            }
+        }
+
+        float distance = bot->GetExactDist2d(ICC_LDW_TANK_POSTION.GetPositionX(), ICC_LDW_TANK_POSTION.GetPositionY());
+        if (distance > 20.0f)
+        {
+            // Calculate direction vector
+            float dirX = ICC_LDW_TANK_POSTION.GetPositionX() - bot->GetPositionX();
+            float dirY = ICC_LDW_TANK_POSTION.GetPositionY() - bot->GetPositionY();
+            float length = sqrt(dirX * dirX + dirY * dirY);
+            dirX /= length;
+            dirY /= length;
+
+            // Move in increments of 3.0f
+            float moveX = bot->GetPositionX() + dirX * 3.0f;
+            float moveY = bot->GetPositionY() + dirY * 3.0f;
+
+            return MoveTo(bot->GetMapId(), moveX, moveY, bot->GetPositionZ(), false, false, false, false,
+                          MovementPriority::MOVEMENT_COMBAT);
+        }
     }
 
     if (!botAI->IsTank(bot))
@@ -275,18 +331,20 @@ bool IccShadeLadyDeathwhisperAction::Execute(Event event)
     for (auto& npc : npcs)
     {
         Unit* unit = botAI->GetUnit(npc);
-        if (unit && unit->GetEntry() == 38222) //vengeful shade ID
+        if (!unit || unit->GetEntry() != 38222)  // vengeful shade ID
+            continue;
+
+        // Only run away if the shade is targeting us
+        // Check by GUID comparison to ensure we're accurately identifying the specific shade in 25HC multiple shades spawn.
+        if (unit->GetVictim() && unit->GetVictim()->GetGUID() == bot->GetGUID())
         {
-            // Only run away if the shade is targeting us
-            if (unit->GetVictim() == bot)
+            float currentDistance = bot->GetDistance2d(unit);
+
+            // Move away from the Vengeful Shade if the bot is too close
+            if (currentDistance < radius)
             {
-                float currentDistance = bot->GetDistance2d(unit);
-               
-                // Move away from the Vengeful Shade if the bot is too close
-                if (currentDistance < radius)
-                {
-                    return MoveAway(unit, radius - currentDistance);
-                }
+                botAI->Reset(); // forces bot to stop channeling or getting locked by any other action
+                return MoveAway(unit, radius - currentDistance);
             }
         }
     }
@@ -444,66 +502,104 @@ bool IccGunshipEnterCannonAction::EnterVehicle(Unit* vehicleBase, bool moveIfFar
 
 bool IccGunshipTeleportAllyAction::Execute(Event event)
 {
+    // Find the Battle-Mage boss
     Unit* boss = AI_VALUE2(Unit*, "find target", "kor'kron battle-mage");
-    if (!boss)
-        return false;
 
-    // Only proceed if the mage is channeling Below Zero
-    if (!(boss->HasUnitState(UNIT_STATE_CASTING) && boss->FindCurrentSpellBySpellId(69705)))
+    // Check if we need to remove skull icon when boss is dead
+    if (Group* group = bot->GetGroup())
     {
-        // If not casting and we're too far from waiting position, go there
-        if (bot->GetExactDist2d(ICC_GUNSHIP_TELEPORT_ALLY2) > 45.0f)
-            return bot->TeleportTo(bot->GetMapId(), ICC_GUNSHIP_TELEPORT_ALLY2.GetPositionX(),
-                          ICC_GUNSHIP_TELEPORT_ALLY2.GetPositionY(), ICC_GUNSHIP_TELEPORT_ALLY2.GetPositionZ(), bot->GetOrientation());
-        return false;
+        ObjectGuid currentSkullTarget = group->GetTargetIcon(7);
+        if (!currentSkullTarget.IsEmpty())
+        {
+            // If the current skull target is dead or doesn't exist, remove the icon
+            if (Unit* skullTarget = ObjectAccessor::GetUnit(*bot, currentSkullTarget))
+            {
+                if (!skullTarget->IsAlive())
+                    group->SetTargetIcon(7, bot->GetGUID(), ObjectGuid::Empty);
+            }
+            else
+            {
+                // Target not found, might have despawned, remove icon
+                group->SetTargetIcon(7, bot->GetGUID(), ObjectGuid::Empty);
+            }
+        }
     }
 
-    if (Group* group = bot->GetGroup())
-        if (group->GetTargetIcon(7) != boss->GetGUID())
-            group->SetTargetIcon(7, bot->GetGUID(), boss->GetGUID());
+    // If no boss found or boss is dead, nothing more to do
+    if (!boss || !boss->IsAlive() || !boss->HasUnitState(UNIT_STATE_CASTING))
+    {
+        // If we're too far from waiting position, go there
+        if (bot->GetExactDist2d(ICC_GUNSHIP_TELEPORT_ALLY2) > 45.0f)
+            return bot->TeleportTo(bot->GetMapId(), ICC_GUNSHIP_TELEPORT_ALLY2.GetPositionX(),
+                                   ICC_GUNSHIP_TELEPORT_ALLY2.GetPositionY(),
+                                   ICC_GUNSHIP_TELEPORT_ALLY2.GetPositionZ(), bot->GetOrientation());
+    }
+    else if (boss->HasUnitState(UNIT_STATE_CASTING) && boss->FindCurrentSpellBySpellId(69705) && boss->IsAlive())
+    {
+        // Mark the boss with skull icon
+        if (Group* group = bot->GetGroup())
+            if (group->GetTargetIcon(7) != boss->GetGUID())
+                group->SetTargetIcon(7, bot->GetGUID(), boss->GetGUID());
 
-    bot->SetTarget(boss->GetGUID());
-    // Check if the bot is targeting a valid boss before teleporting
-    if (bot->GetTarget() != boss->GetGUID())
-        return false;
-        
-    if (!botAI->IsAssistTank(bot) && bot->GetExactDist2d(ICC_GUNSHIP_TELEPORT_ALLY) > 15.0f)
-        return bot->TeleportTo(bot->GetMapId(), ICC_GUNSHIP_TELEPORT_ALLY.GetPositionX(),
-                      ICC_GUNSHIP_TELEPORT_ALLY.GetPositionY(), ICC_GUNSHIP_TELEPORT_ALLY.GetPositionZ(), bot->GetOrientation());
-    
-        return Attack(boss);
+        // Teleport non-tank bots to attack position if not already there
+        if (!botAI->IsAssistTank(bot) && bot->GetExactDist2d(ICC_GUNSHIP_TELEPORT_ALLY) > 15.0f)
+            return bot->TeleportTo(bot->GetMapId(), ICC_GUNSHIP_TELEPORT_ALLY.GetPositionX(),
+                                   ICC_GUNSHIP_TELEPORT_ALLY.GetPositionY(), ICC_GUNSHIP_TELEPORT_ALLY.GetPositionZ(),
+                                   bot->GetOrientation());
+    }
+
+    return false;
 }
 
 bool IccGunshipTeleportHordeAction::Execute(Event event)
 {
+    // Find the Sorcerer boss
     Unit* boss = AI_VALUE2(Unit*, "find target", "skybreaker sorcerer");
-    if (!boss)
-        return false;
 
-    // Only proceed if the sorcerer is channeling Below Zero
-    if (!(boss->HasUnitState(UNIT_STATE_CASTING) && boss->FindCurrentSpellBySpellId(69705)))
+    // Check if we need to remove skull icon when boss is dead
+    if (Group* group = bot->GetGroup())
     {
-        // If not casting and we're too far from waiting position, go there
-        if (bot->GetExactDist2d(ICC_GUNSHIP_TELEPORT_HORDE2) > 45.0f)
-            return bot->TeleportTo(bot->GetMapId(), ICC_GUNSHIP_TELEPORT_HORDE2.GetPositionX(),
-                          ICC_GUNSHIP_TELEPORT_HORDE2.GetPositionY(), ICC_GUNSHIP_TELEPORT_HORDE2.GetPositionZ(), bot->GetOrientation());
-        return false;
+        ObjectGuid currentSkullTarget = group->GetTargetIcon(7);
+        if (!currentSkullTarget.IsEmpty())
+        {
+            // If the current skull target is dead or doesn't exist, remove the icon
+            if (Unit* skullTarget = ObjectAccessor::GetUnit(*bot, currentSkullTarget))
+            {
+                if (!skullTarget->IsAlive())
+                    group->SetTargetIcon(7, bot->GetGUID(), ObjectGuid::Empty);
+            }
+            else
+            {
+                // Target not found, might have despawned, remove icon
+                group->SetTargetIcon(7, bot->GetGUID(), ObjectGuid::Empty);
+            }
+        }
     }
 
-    if (Group* group = bot->GetGroup())
-        if (group->GetTargetIcon(7) != boss->GetGUID())
-            group->SetTargetIcon(7, bot->GetGUID(), boss->GetGUID());
+    // If no boss found or boss is dead, nothing more to do
+    if (!boss || !boss->IsAlive() || !boss->HasUnitState(UNIT_STATE_CASTING))
+    {
+        // If we're too far from waiting position, go there
+        if (bot->GetExactDist2d(ICC_GUNSHIP_TELEPORT_HORDE2) > 45.0f)
+            return bot->TeleportTo(bot->GetMapId(), ICC_GUNSHIP_TELEPORT_HORDE2.GetPositionX(),
+                                   ICC_GUNSHIP_TELEPORT_HORDE2.GetPositionY(),
+                                   ICC_GUNSHIP_TELEPORT_HORDE2.GetPositionZ(), bot->GetOrientation());
+    }
+    else if (boss->HasUnitState(UNIT_STATE_CASTING) && boss->FindCurrentSpellBySpellId(69705) && boss->IsAlive())
+    {
+        // Mark the boss with skull icon
+        if (Group* group = bot->GetGroup())
+            if (group->GetTargetIcon(7) != boss->GetGUID())
+                group->SetTargetIcon(7, bot->GetGUID(), boss->GetGUID());
 
-    bot->SetTarget(boss->GetGUID());
-    // Check if the bot is targeting a valid boss before teleporting
-    if (bot->GetTarget() != boss->GetGUID())
-        return false;
+        // Teleport non-tank bots to attack position if not already there
+        if (!botAI->IsAssistTank(bot) && bot->GetExactDist2d(ICC_GUNSHIP_TELEPORT_HORDE) > 15.0f)
+            return bot->TeleportTo(bot->GetMapId(), ICC_GUNSHIP_TELEPORT_HORDE.GetPositionX(),
+                                   ICC_GUNSHIP_TELEPORT_HORDE.GetPositionY(), ICC_GUNSHIP_TELEPORT_HORDE.GetPositionZ(),
+                                   bot->GetOrientation());
+    }
 
-    if (!botAI->IsAssistTank(bot) && bot->GetExactDist2d(ICC_GUNSHIP_TELEPORT_HORDE) > 15.0f)
-        return bot->TeleportTo(bot->GetMapId(), ICC_GUNSHIP_TELEPORT_HORDE.GetPositionX(),
-                      ICC_GUNSHIP_TELEPORT_HORDE.GetPositionY(), ICC_GUNSHIP_TELEPORT_HORDE.GetPositionZ(), bot->GetOrientation());
-    
-        return Attack(boss);
+    return false;
 }
 
 //DBS
@@ -1121,119 +1217,129 @@ bool IccRotfaceMoveAwayFromExplosionAction::Execute(Event event)
 
 bool IccPutricideGrowingOozePuddleAction::Execute(Event event)
 {
-    const float BASE_RADIUS = 2.0f;
-    const float STACK_MULTIPLIER = 0.5f;
-    const float MIN_DISTANCE = 0.1f; // Minimum distance to consider when bot is very close or inside puddle
 
-    // Get the nearest hostile NPCs
+    // Constants moved outside to prevent recreation on each call
+    static const float BASE_RADIUS = 2.0f;
+    static const float STACK_MULTIPLIER = 0.5f;
+    static const float MIN_DISTANCE = 0.1f;
+    static const float BUFFER_DISTANCE = 2.0f;
+    static const uint32 GROWING_OOZE_PUDDLE_ID = 37690;
+    static const uint32 GROW_AURA_ID = 70347;
+
+    // Cache bot position to avoid multiple calls
+    float botX = bot->GetPositionX();
+    float botY = bot->GetPositionY();
+    float botZ = bot->GetPositionZ();
+
+    // Get the nearest hostile NPCs - only once and store locally
     GuidVector npcs = AI_VALUE(GuidVector, "nearest hostile npcs");
-    float closestDistance = FLT_MAX;
-    Unit* closestPuddle = nullptr;
-    float closestSafeDistance = BASE_RADIUS;
+    if (npcs.empty())
+        return false;
 
-    // Find the closest puddle and its safe distance
+    // Find puddles and their safe distances in one pass
+    std::vector<std::tuple<Unit*, float, float>> puddles;  // Unit*, distance, safeDistance
+    puddles.reserve(8);                                    // Pre-allocate a reasonable size
+
     for (auto& npc : npcs)
     {
         Unit* unit = botAI->GetUnit(npc);
-        if (unit && unit->GetEntry() == 37690) //growing ooze puddle ID
+        if (!unit || unit->GetEntry() != GROWING_OOZE_PUDDLE_ID)
+            continue;
+
+        float currentDistance = std::max(MIN_DISTANCE, bot->GetExactDist(unit));
+
+        float safeDistance = BASE_RADIUS;
+        if (Aura* grow = unit->GetAura(GROW_AURA_ID))
+            safeDistance += (grow->GetStackAmount() * STACK_MULTIPLIER);
+
+        puddles.emplace_back(unit, currentDistance, safeDistance);
+    }
+
+    // If no puddles found, exit early
+    if (puddles.empty())
+        return false;
+
+    // Find the closest threatening puddle
+    Unit* closestPuddle = nullptr;
+    float closestDistance = FLT_MAX;
+    float closestSafeDistance = BASE_RADIUS;
+    bool needToMove = false;
+
+    for (const auto& [puddle, distance, safeDistance] : puddles)
+    {
+        if (distance < safeDistance && distance < closestDistance)
         {
-            // Use GetExactDist instead of GetDistance2d to handle Z-axis
-            float currentDistance = std::max(MIN_DISTANCE, bot->GetExactDist(unit));
-            if (currentDistance < closestDistance)
-            {
-                closestDistance = currentDistance;
-                closestPuddle = unit;
-            
-                // Calculate safe distance for this puddle
-                if (Aura* grow = unit->GetAura(70347))
-                {
-                    closestSafeDistance = BASE_RADIUS + (grow->GetStackAmount() * STACK_MULTIPLIER);
-                }
-            }
+            closestDistance = distance;
+            closestSafeDistance = safeDistance;
+            closestPuddle = puddle;
+            needToMove = true;
         }
     }
-            
-    // If we found a puddle that's too close, move away from it
-    if (closestPuddle && closestDistance < closestSafeDistance)
+
+    // If we don't need to move, exit early
+    if (!needToMove)
+        return false;
+
+    // Calculate vector from puddle to bot
+    float dx = botX - closestPuddle->GetPositionX();
+    float dy = botY - closestPuddle->GetPositionY();
+    float dist = std::max(MIN_DISTANCE, sqrt(dx * dx + dy * dy));
+
+    // If we're too close or inside, pick a random direction to move
+    if (dist < MIN_DISTANCE * 2)
     {
-        float botX = bot->GetPositionX();
-        float botY = bot->GetPositionY();
-        float botZ = bot->GetPositionZ();
-                
-        // Calculate vector from puddle to bot
-        float dx = botX - closestPuddle->GetPositionX();
-        float dy = botY - closestPuddle->GetPositionY();
-        float dist = std::max(MIN_DISTANCE, sqrt(dx * dx + dy * dy));
-                
-        // If we're too close or inside, pick a random direction to move
-        if (dist < MIN_DISTANCE * 2)
-        {
-            float randomAngle = float(rand()) / float(RAND_MAX) * 2 * M_PI;
-            dx = cos(randomAngle);
-            dy = sin(randomAngle);
-        }
-        else
-        {
-            dx /= dist;
-            dy /= dist;
-        }
+        float randomAngle = float(rand()) / float(RAND_MAX) * 2 * M_PI;
+        dx = cos(randomAngle);
+        dy = sin(randomAngle);
+    }
+    else
+    {
+        dx /= dist;
+        dy /= dist;
+    }
 
-        // Try different angles to find a safe path
-        const int numAngles = 8;
-        float bestMoveX = botX;
-        float bestMoveY = botY;
-        bool foundPath = false;
-        float moveDistance = closestSafeDistance - closestDistance + 2.0f; // Add 2 yards buffer
-                    
-        for (int i = 0; i < numAngles; i++)
-        {
-            float angle = (2 * M_PI * i) / numAngles;
-            float rotatedDx = dx * cos(angle) - dy * sin(angle);
-            float rotatedDy = dx * sin(angle) + dy * cos(angle);
-                        
-            float testX = botX + rotatedDx * moveDistance;
-            float testY = botY + rotatedDy * moveDistance;
-            float testZ = botZ;
+    // Calculate move distance once
+    float moveDistance = closestSafeDistance - closestDistance + BUFFER_DISTANCE;
 
-            // Check if this move would put us too close to any other puddle
-            bool tooCloseToOtherPuddle = false;
-            for (auto& otherNpc : npcs)
+    // Try different angles to find a safe path
+    const int numAngles = 8;
+    for (int i = 0; i < numAngles; i++)
+    {
+        float angle = (2 * M_PI * i) / numAngles;
+        float rotatedDx = dx * cos(angle) - dy * sin(angle);
+        float rotatedDy = dx * sin(angle) + dy * cos(angle);
+
+        float testX = botX + rotatedDx * moveDistance;
+        float testY = botY + rotatedDy * moveDistance;
+
+        // Skip LOS check if too close to other puddles
+        bool tooCloseToOtherPuddle = false;
+        for (const auto& [otherPuddle, _, otherSafeDistance] : puddles)
+        {
+            if (otherPuddle == closestPuddle)
+                continue;
+
+            float newDist =
+                sqrt(pow(testX - otherPuddle->GetPositionX(), 2) + pow(testY - otherPuddle->GetPositionY(), 2));
+
+            if (newDist < otherSafeDistance)
             {
-                Unit* otherUnit = botAI->GetUnit(otherNpc);
-                if (otherUnit && otherUnit->GetEntry() == 37690 && otherUnit != closestPuddle)
-                {
-                    float otherSafeDistance = BASE_RADIUS;
-                    if (Aura* grow = otherUnit->GetAura(70347))
-                    {
-                        otherSafeDistance = BASE_RADIUS + (grow->GetStackAmount() * STACK_MULTIPLIER);
-                    }
-                        
-                    float newDist = sqrt(pow(testX - otherUnit->GetPositionX(), 2) + 
-                                      pow(testY - otherUnit->GetPositionY(), 2));
-                    if (newDist < otherSafeDistance)
-                    {
-                        tooCloseToOtherPuddle = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!tooCloseToOtherPuddle && bot->IsWithinLOS(testX, testY, testZ))
-            {
-                bestMoveX = testX;
-                bestMoveY = testY;
-                foundPath = true;
+                tooCloseToOtherPuddle = true;
                 break;
             }
         }
 
-        if (foundPath)
+        if (!tooCloseToOtherPuddle && bot->IsWithinLOS(testX, testY, botZ))
         {
-            return MoveTo(bot->GetMapId(), bestMoveX, bestMoveY, botZ,
-                false, false, false, false, MovementPriority::MOVEMENT_COMBAT);
+            // Found a safe path, move there
+            return MoveTo(bot->GetMapId(), testX, testY, botZ, false, false, false, false,
+                          MovementPriority::MOVEMENT_COMBAT);
         }
     }
-    return false;
+
+    // If we couldn't find a safe path, at least try to move away from the closest puddle
+    return MoveTo(bot->GetMapId(), botX + dx * moveDistance, botY + dy * moveDistance, botZ, false, false, false, false,
+                  MovementPriority::MOVEMENT_COMBAT);
 }
 
 bool IccPutricideVolatileOozeAction::Execute(Event event)
@@ -1242,6 +1348,20 @@ bool IccPutricideVolatileOozeAction::Execute(Event event)
 
     // Find the ooze
     Unit* ooze = AI_VALUE2(Unit*, "find target", "volatile ooze");
+    if (!ooze)
+        return false;
+
+    Unit* boss = AI_VALUE2(Unit*, "find target", "professor putricide");
+    if (!boss)
+        return false;
+
+    if (botAI->IsTank(bot) && bot->GetExactDist2d(ICC_PUTRICIDE_TANK_POSITION) > 20.0f && !boss->HealthBelowPct(36) && boss->GetVictim() == bot)
+    {
+        return MoveTo(bot->GetMapId(), ICC_PUTRICIDE_TANK_POSITION.GetPositionX(),
+                      ICC_PUTRICIDE_TANK_POSITION.GetPositionY(), ICC_PUTRICIDE_TANK_POSITION.GetPositionZ(), false, false,
+                      false, true, MovementPriority::MOVEMENT_COMBAT, true, false);
+    }
+
     bool botHasAura = botAI->HasAura("Volatile Ooze Adhesive", bot);
     bool botHasAura2 = botAI->HasAura("Gaseous Bloat", bot);
     bool botHasAura3 = botAI->HasAura("Unbound Plague", bot);
@@ -1385,10 +1505,22 @@ bool IccPutricideGasCloudAction::Execute(Event event)
 
     Unit* volatileOoze = AI_VALUE2(Unit*, "find target", "volatile ooze");
 
+    Unit* boss = AI_VALUE2(Unit*, "find target", "professor putricide");
+    if (!boss)
+        return false;
+
     bool botHasAura = botAI->HasAura("Gaseous Bloat", bot);
     
     if(!botHasAura && volatileOoze)
         return false;
+
+    if (botAI->IsTank(bot) && bot->GetExactDist2d(ICC_PUTRICIDE_TANK_POSITION) > 20.0f && !boss->HealthBelowPct(36) &&
+        boss->GetVictim() == bot)
+    {
+        return MoveTo(bot->GetMapId(), ICC_PUTRICIDE_TANK_POSITION.GetPositionX(),
+                      ICC_PUTRICIDE_TANK_POSITION.GetPositionY(), ICC_PUTRICIDE_TANK_POSITION.GetPositionZ(), false,
+                      false, false, true, MovementPriority::MOVEMENT_COMBAT, true, false);
+    }
 
     if (botHasAura)
     {
@@ -1694,7 +1826,7 @@ bool IccBpcMainTankAction::Execute(Event event)
             if (unit->HasAura(71596))
             {
                 if (unit->GetEntry() == 37972 ||    // Keleseth
-                 unit->GetEntry() == 37973 ||    // Taldaram
+                    unit->GetEntry() == 37973 ||    // Taldaram
                     unit->GetEntry() == 37970)      // Valanar
                 {
                 empoweredPrince = unit;
@@ -1828,30 +1960,43 @@ bool IccBpcEmpoweredVortexAction::Execute(Event event)
 
 bool IccBpcKineticBombAction::Execute(Event event)
 {
-    // Only allow ranged DPS to handle bombs
+    // Early exit if not ranged DPS
     if (!botAI->IsRangedDps(bot))
         return false;
-    
-    //for some reason they sometimes decide to move up in the air when they attack the kinetic bomb and that will make everyone tp to entrance...
-    if (bot->GetPositionZ() > 371.16473f)
-        return bot->TeleportTo(bot->GetMapId(), bot->GetPositionX(),
-                          bot->GetPositionY(), 366.16473f, bot->GetOrientation());
 
+    // Static constants to avoid recreating them every call
+    static const float MAX_HEIGHT_DIFF = 25.0f;
+    static const float SAFE_HEIGHT = 371.16473f;
+    static const float TELEPORT_HEIGHT = 366.16473f;
+
+    // Handle the edge case where bot is too high (prevent teleport to entrance)
+    if (bot->GetPositionZ() > SAFE_HEIGHT)
+        return bot->TeleportTo(bot->GetMapId(), bot->GetPositionX(), bot->GetPositionY(), TELEPORT_HEIGHT,
+                               bot->GetOrientation());
+
+    // Cache bot position once
+    float botZ = bot->GetPositionZ();
+
+    // Check if we're already handling a valid bomb
     Unit* currentTarget = AI_VALUE(Unit*, "current target");
-
-    // If we're already attacking a bomb and it's still in range, stick with it
     if (currentTarget && currentTarget->IsAlive() && currentTarget->GetName() == "Kinetic Bomb")
     {
-        float heightDiff = currentTarget->GetPositionZ() - bot->GetPositionZ();
-        if (heightDiff < 25.0f)
+        float heightDiff = currentTarget->GetPositionZ() - botZ;
+        if (heightDiff < MAX_HEIGHT_DIFF)
             return false;  // Continue current attack
     }
 
+    // Get possible targets once
     GuidVector targets = AI_VALUE(GuidVector, "possible targets");
+    if (targets.empty())
+        return false;
+
+    // Cache group only once
+    Group* group = bot->GetGroup();
 
     // Find the lowest reachable bomb
     Unit* bestBomb = nullptr;
-    float lowestHeightDiff = 25.0f;  // Maximum height we care about
+    float lowestHeightDiff = MAX_HEIGHT_DIFF;
 
     for (auto& guid : targets)
     {
@@ -1859,37 +2004,41 @@ bool IccBpcKineticBombAction::Execute(Event event)
         if (!unit || !unit->IsAlive() || unit->GetName() != "Kinetic Bomb")
             continue;
 
-        float heightDiff = unit->GetPositionZ() - bot->GetPositionZ();
-        if (heightDiff < lowestHeightDiff)
-        {
-            // Check if any closer ranged DPS is already attacking this bomb
-            bool alreadyHandled = false;
-            Group* group = bot->GetGroup();
-            if (group)
-            {
-                for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
-                {
-                    Player* member = itr->GetSource();
-                    if (!member || member == bot || !member->IsAlive() || !botAI->IsRangedDps(member))
-                        continue;
+        float heightDiff = unit->GetPositionZ() - botZ;
+        if (heightDiff >= lowestHeightDiff)
+            continue;
 
-                    if (member->GetTarget() == unit->GetGUID() && member->GetDistance(unit) < bot->GetDistance(unit))
-                    {
-                        alreadyHandled = true;
-                        break;
-                    }
+        // Skip if bot is too far to realistically hit this bomb
+        if (bot->GetDistance(unit) > 30.0f)
+            continue;
+
+        // Check if any closer ranged DPS is already handling this bomb
+        bool alreadyHandled = false;
+
+        if (group)
+        {
+            for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
+            {
+                Player* member = itr->GetSource();
+                if (!member || member == bot || !member->IsAlive() || !botAI->IsRangedDps(member))
+                    continue;
+
+                if (member->GetTarget() == unit->GetGUID() && member->GetDistance(unit) < bot->GetDistance(unit))
+                {
+                    alreadyHandled = true;
+                    break;
                 }
             }
+        }
 
-            if (!alreadyHandled)
-            {
-                bestBomb = unit;
-                lowestHeightDiff = heightDiff;
-            }
+        if (!alreadyHandled)
+        {
+            bestBomb = unit;
+            lowestHeightDiff = heightDiff;
         }
     }
 
-    // Attack the lowest unhandled bomb if found
+    // Attack the best bomb if found
     if (bestBomb)
         return Attack(bestBomb);
 
@@ -1904,8 +2053,11 @@ bool IccBqlTankPositionAction::Execute(Event event)
     Aura* aura = botAI->GetAura("Frenzied Bloodthirst", bot);
     Aura* aura2 = botAI->GetAura("Swarming Shadows", bot);
 
+    if (!boss)
+        return false;
+
     // If tank is not at position, move there
-    if (botAI->IsTank(bot) || botAI->IsMainTank(bot) || botAI->IsAssistTank(bot) && !(aura || aura2))
+    if ((botAI->IsTank(bot) || botAI->IsMainTank(bot) || botAI->IsAssistTank(bot)) && !(aura || aura2))
     {
         if (bot->GetExactDist2d(ICC_BQL_TANK_POSITION) > 10.0f)
             return MoveTo(bot->GetMapId(), ICC_BQL_TANK_POSITION.GetPositionX(),
@@ -3079,7 +3231,10 @@ bool IccLichKingShadowTrapAction::Execute(Event event)
     if (!boss)
         return false;
 
-    //search for all nearby traps
+    if (!botAI->IsRanged(bot))
+        return false;
+
+    // search for all nearby traps
     GuidVector npcs = AI_VALUE(GuidVector, "nearest hostile npcs");
     std::vector<Unit*> nearbyTraps;
     bool needToMove = false;
@@ -3090,13 +3245,30 @@ bool IccLichKingShadowTrapAction::Execute(Event event)
         if (!unit || !unit->IsAlive())
             continue;
 
-        if (unit->GetEntry() == 39137) //shadow trap
+        if (unit->GetEntry() == 39137)  // shadow trap
         {
             float distance = bot->GetDistance(unit);
             if (distance < 7.0f)
             {
                 needToMove = true;
                 nearbyTraps.push_back(unit);
+
+                // Immediate danger check - if we're very close to any trap, move away faster
+                if (distance < 3.0f)
+                {
+                    float angle = bot->GetAngle(unit);
+                    float x = bot->GetPositionX() + cos(angle + M_PI) * 5.0f;  // Move opposite direction
+                    float y = bot->GetPositionY() + sin(angle + M_PI) * 5.0f;
+                    float z = bot->GetPositionZ();
+
+                    bot->UpdateAllowedPositionZ(x, y, z);
+                    if (bot->IsWithinLOS(x, y, z))
+                    {
+                        botAI->Reset();
+                        return MoveTo(bot->GetMapId(), x, y, z, false, false, false, true,
+                                      MovementPriority::MOVEMENT_FORCED, true, false);
+                    }
+                }
             }
         }
     }
@@ -3105,18 +3277,19 @@ bool IccLichKingShadowTrapAction::Execute(Event event)
         return false;
 
     // Try different angles to find a safe spot
-    float const MOVE_DISTANCE = 4.0f;
-    float const ANGLE_INCREMENT = M_PI / 8; // 22.5 degrees
+    float const MOVE_DISTANCE = 5.0f;        
+    float const ANGLE_INCREMENT = M_PI / 4;  
     float bestAngle = 0;
     float maxMinDistance = 0;
+    bool foundSafeSpot = false;
 
-    // Try 16 different directions
-    for (int i = 0; i < 16; i++)
+    // Try 8 primary directions first (faster evaluation)
+    for (int i = 0; i < 8; i++)
     {
         float tryAngle = i * ANGLE_INCREMENT;
         float testX = bot->GetPositionX() + cos(tryAngle) * MOVE_DISTANCE;
         float testY = bot->GetPositionY() + sin(tryAngle) * MOVE_DISTANCE;
-        float testZ = 840.857f;
+        float testZ = bot->GetPositionZ();  // Use current Z as base
 
         bot->UpdateAllowedPositionZ(testX, testY, testZ);
 
@@ -3125,16 +3298,22 @@ bool IccLichKingShadowTrapAction::Execute(Event event)
             continue;
 
         // Find minimum distance to any trap from this position
-        float minTrapDistance = 100.0f;
+        float minTrapDistance = FLT_MAX;
         for (Unit* trap : nearbyTraps)
         {
-            float dx = testX - trap->GetPositionX();
-            float dy = testY - trap->GetPositionY();
-            float distToTrap = sqrt(dx * dx + dy * dy);
+            float distToTrap = sqrt(pow(testX - trap->GetPositionX(), 2) + pow(testY - trap->GetPositionY(), 2));
             minTrapDistance = std::min(minTrapDistance, distToTrap);
         }
 
-        // If this position keeps us further from all traps than previous positions
+        // If this position gets us to safety, move there immediately
+        if (minTrapDistance >= 7.0f)
+        {
+            bestAngle = tryAngle;
+            foundSafeSpot = true;
+            break;
+        }
+
+        // Otherwise track the best option
         if (minTrapDistance > maxMinDistance)
         {
             maxMinDistance = minTrapDistance;
@@ -3142,17 +3321,37 @@ bool IccLichKingShadowTrapAction::Execute(Event event)
         }
     }
 
-    // If we found a safe direction, move there
-    if (maxMinDistance >= 7.0f)
+    // If we didn't find a completely safe spot but can improve our situation
+    if (!foundSafeSpot && maxMinDistance > bot->GetDistance(nearbyTraps[0]))
+    {
+        foundSafeSpot = true;
+    }
+
+    // Move to the selected position
+    if (foundSafeSpot)
     {
         float x = bot->GetPositionX() + cos(bestAngle) * MOVE_DISTANCE;
         float y = bot->GetPositionY() + sin(bestAngle) * MOVE_DISTANCE;
-        float z = 840.857f;
-            bot->UpdateAllowedPositionZ(x, y, z);
+        float z = bot->GetPositionZ();
 
-    return MoveTo(bot->GetMapId(), x, y, z,
-                 false, false, false, false, MovementPriority::MOVEMENT_FORCED);
+        bot->UpdateAllowedPositionZ(x, y, z);
+        if (bot->IsWithinLOS(x, y, z))
+        {
+            botAI->Reset();
+            return MoveTo(bot->GetMapId(), x, y, z, false, false, false, true, MovementPriority::MOVEMENT_FORCED, true,
+                          false);
+        }
     }
+
+    // Fallback: Just move backward if all else fails
+    float angle = bot->GetAngle(nearbyTraps[0]);
+    float x = bot->GetPositionX() + cos(angle + M_PI) * 5.0f;
+    float y = bot->GetPositionY() + sin(angle + M_PI) * 5.0f;
+    float z = bot->GetPositionZ();
+
+    bot->UpdateAllowedPositionZ(x, y, z);
+    botAI->Reset();
+    return MoveTo(bot->GetMapId(), x, y, z, false, false, false, true, MovementPriority::MOVEMENT_FORCED, true, false);
 
     return false;
 }
@@ -3203,10 +3402,10 @@ bool IccLichKingNecroticPlagueAction::Execute(Event event)
     if (closestHorror)
     {
         if (closestHorror->isInFront(bot))
-            return FleePosition(closestHorror->GetPosition(), 5.0f, 250U);
+            return FleePosition(closestHorror->GetPosition(), 2.0f, 250U);
 
         // If we're too far, run to it
-        if (minHorrorDist > 4.0f)
+        if (minHorrorDist > 2.0f)
         {
             // Check if there's a trap in our path
             if (nearestTrap && minTrapDist < 9.0f)
@@ -3218,11 +3417,13 @@ bool IccLichKingNecroticPlagueAction::Execute(Event event)
                 float safeZ = 840.857f;
 
                 // Move to safe position first
+                botAI->Reset();
                 return MoveTo(bot->GetMapId(), safeX, safeY, safeZ,
                             false, false, false, false, MovementPriority::MOVEMENT_FORCED);
             }
             
             // No traps nearby, move directly to horror
+            botAI->Reset();
             return MoveTo(closestHorror, 3.0f, MovementPriority::MOVEMENT_FORCED);
         }
         else
@@ -3248,14 +3449,15 @@ bool IccLichKingWinterAction::Execute(Event event)
 
     if (!currentTarget)
     {}
-    else if (currentTarget->isInFront(bot) && currentTarget->IsAlive() && !botAI->IsTank(bot) && bot->GetDistance2d(currentTarget) < 15.0f)
+    else if (!botAI->IsRanged(bot) && currentTarget->isInFront(bot) && currentTarget->IsAlive() && !botAI->IsTank(bot) && currentTarget->GetEntry() != 36597 &&
+             currentTarget->GetEntry() != 36633 && currentTarget->GetEntry() != 39305 && currentTarget->GetEntry() != 39306 && currentTarget->GetEntry() != 39307)
     {
             float orientation = currentTarget->GetOrientation() + M_PI + M_PI / 8;
             float x = currentTarget->GetPositionX();
             float y = currentTarget->GetPositionY();
             float z = currentTarget->GetPositionZ();
-            float rx = x + cos(orientation) * 5.0f;
-            float ry = y + sin(orientation) * 5.0f;
+            float rx = x + cos(orientation) * 4.0f;
+            float ry = y + sin(orientation) * 4.0f;
             return MoveTo(bot->GetMapId(), rx, ry, z, false, false, false, false, MovementPriority::MOVEMENT_COMBAT,
                           true, false);
     }
@@ -3280,15 +3482,15 @@ bool IccLichKingWinterAction::Execute(Event event)
         if (distToTarget > 3.0f)
         {
             float angle = bot->GetAngle(targetPos);
-            float posX = bot->GetPositionX() + cos(angle) * 5.0f;
-            float posY = bot->GetPositionY() + sin(angle) * 5.0f;
+            float posX = bot->GetPositionX() + cos(angle) * 2.0f;
+            float posY = bot->GetPositionY() + sin(angle) * 2.0f;
             return MoveTo(bot->GetMapId(), posX, posY, 840.857f, false, false, false, true,
                           MovementPriority::MOVEMENT_FORCED, true, false);
         }
     }
     else
     {
-        // Calculate distances to tank positions
+        // Calculate distances to tank and melee positions
         float dist1 = bot->GetDistance2d(ICC_LK_FROST1_POSITION.GetPositionX(), ICC_LK_FROST1_POSITION.GetPositionY());
         float dist2 = bot->GetDistance2d(ICC_LK_FROST2_POSITION.GetPositionX(), ICC_LK_FROST2_POSITION.GetPositionY());
         float dist3 = bot->GetDistance2d(ICC_LK_FROST3_POSITION.GetPositionX(), ICC_LK_FROST3_POSITION.GetPositionY());
@@ -3300,25 +3502,74 @@ bool IccLichKingWinterAction::Execute(Event event)
             targetPos = &ICC_LK_FROST3_POSITION;
 
         float distToTarget = bot->GetDistance2d(targetPos->GetPositionX(), targetPos->GetPositionY());
-        if (distToTarget > 10.0f && !botAI->IsTank(bot))
+        if (distToTarget > 6.0f && !botAI->IsTank(bot))
         {
             float angle = bot->GetAngle(targetPos);
-            float posX = bot->GetPositionX() + cos(angle) * 5.0f;
-            float posY = bot->GetPositionY() + sin(angle) * 5.0f;
+            float posX = bot->GetPositionX() + cos(angle) * 3.0f;
+            float posY = bot->GetPositionY() + sin(angle) * 3.0f;
             return MoveTo(bot->GetMapId(), posX, posY, 840.857f, false, false, false, false,
                           MovementPriority::MOVEMENT_FORCED, true, false);
         }
 
-        
+        if (botAI->IsAssistTank(bot) && distToTarget < 10)
+        {
+            // Actively look for any shambling/spirit/ghoul that isn't targeting our tank
+            GuidVector targets = AI_VALUE(GuidVector, "possible targets");
+            for (auto i = targets.begin(); i != targets.end(); ++i)
+            {
+                Unit* unit = botAI->GetUnit(*i);
+                if (unit && unit->IsAlive() &&
+                    (unit->GetEntry() == 37698 || unit->GetEntry() == 39299 || unit->GetEntry() == 39300 ||
+                     unit->GetEntry() == 39301 ||  // Shambling entry
+                     unit->GetEntry() == 36701 || unit->GetEntry() == 39302 || unit->GetEntry() == 39303 ||
+                     unit->GetEntry() == 39304 ||  // Spirits entry
+                     unit->GetEntry() == 37695 || unit->GetEntry() == 39309 || unit->GetEntry() == 39310 ||
+                     unit->GetEntry() == 39311))  // Drudge Ghouls entry
+                {
+                    Unit* mt = AI_VALUE(Unit*, "main tank");                   
+                    if (unit->GetVictim() != mt)
+                    {
+                        bot->SetFacingToObject(unit);
+                        return Attack(unit);  // Attack any shambling that isn't targeting a tank
+                    }
+                }
+            }
+        }
+
+        if (botAI->IsMainTank(bot))
+        {
+            // Actively look for any shambling/spirit/ghoul that isn't targeting our tank
+            GuidVector targets = AI_VALUE(GuidVector, "possible targets");
+            for (auto i = targets.begin(); i != targets.end(); ++i)
+            {
+                Unit* unit = botAI->GetUnit(*i);
+                if (unit && unit->IsAlive() &&
+                    (unit->GetEntry() == 37698 || unit->GetEntry() == 39299 || unit->GetEntry() == 39300 ||
+                     unit->GetEntry() == 39301 ||  // Shambling entry
+                     unit->GetEntry() == 36701 || unit->GetEntry() == 39302 || unit->GetEntry() == 39303 ||
+                     unit->GetEntry() == 39304 ||  // Spirits entry
+                     unit->GetEntry() == 37695 || unit->GetEntry() == 39309 || unit->GetEntry() == 39310 ||
+                     unit->GetEntry() == 39311))  // Drudge Ghouls entry
+                {
+                    Unit* mt = AI_VALUE(Unit*, "main tank");
+                    if (unit->GetVictim() != mt && unit->GetDistance2d(targetPos->GetPositionX(), targetPos->GetPositionY()) < 3.0f)
+                    {
+                        bot->SetFacingToObject(unit);
+                        return Attack(unit);  // Attack any shambling that isn't targeting a tank
+                    }
+                }
+            }
+        }
+
         if (distToTarget > 2.0f && botAI->IsTank(bot))
         {
             float angle = bot->GetAngle(targetPos);
-            float posX = bot->GetPositionX() + cos(angle) * 5.0f;
-            float posY = bot->GetPositionY() + sin(angle) * 5.0f;
+            float posX = bot->GetPositionX() + cos(angle) * 1.5f;
+            float posY = bot->GetPositionY() + sin(angle) * 1.5f;
             return MoveTo(bot->GetMapId(), posX, posY, 840.857f, false, false, false, true,
-                          MovementPriority::MOVEMENT_FORCED, true, false);
+                 MovementPriority::MOVEMENT_FORCED, true, false);
         }
-  
+        
     }
 
    // Check for spheres if we're at a safe distance
@@ -3364,6 +3615,7 @@ bool IccLichKingWinterAction::Execute(Event event)
             }
             if (closestSphere)
             {
+                botAI->Reset();
                 bot->SetFacingToObject(closestSphere);
                 return Attack(closestSphere);
             }
@@ -3431,7 +3683,9 @@ bool IccLichKingAddsAction::Execute(Event event)
                           ICC_LICH_KING_ADDS_POSITION.GetPositionY(), ICC_LICH_KING_ADDS_POSITION.GetPositionZ(), bot->GetOrientation());
     }
 
-    if (boss && boss->HasUnitState(UNIT_STATE_CASTING) && boss->FindCurrentSpellBySpellId(72262) && bot->GetExactDist2d(boss) > 20.0f)    //quake
+    if (!boss)
+    {}
+    else if (boss && boss->HasUnitState(UNIT_STATE_CASTING) && boss->FindCurrentSpellBySpellId(72262) && bot->GetExactDist2d(boss) > 20.0f)    //quake
     {
         float angle = bot->GetAngle(boss);
         float posX = bot->GetPositionX() + cos(angle) * 10.0f;
@@ -3463,40 +3717,16 @@ bool IccLichKingAddsAction::Execute(Event event)
 
     if (!closestHorror || hasPlague)
     {}
-    else if (!hasPlague && closestHorror->isInFront(bot) && closestHorror->IsAlive() && !botAI->IsTank(bot) && bot->GetDistance2d(closestHorror) < 21.0f)
+    else if (!hasPlague && closestHorror->isInFront(bot) && closestHorror->IsAlive() && !botAI->IsTank(bot) && bot->GetDistance2d(closestHorror) < 3.0f)
         return FleePosition(closestHorror->GetPosition(), 2.0f, 250U);
 
     // If bot is hunter and shambling is enraged, use Tranquilizing Shot
     if (bot->getClass() == CLASS_HUNTER && closestHorror && botAI->HasAura("Enrage", closestHorror))
         return botAI->CastSpell("Tranquilizing Shot", closestHorror);
 
-    if (!botAI->IsAssistTank(bot) && !boss->HealthBelowPct(71))
-    {
-        // Check for necrotic plague
-        bool hasPlague = botAI->HasAura("Necrotic Plague", bot);
-
-        // Only execute if we dont have the plague
-        if (!hasPlague)
-        {
-            float distanceToPosition = bot->GetDistance2d(ICC_LICH_KING_ADDS_POSITION.GetPositionX(),
-                                                          ICC_LICH_KING_ADDS_POSITION.GetPositionY());
-            if (distanceToPosition < 15.0f)  // Only move if we're closer than 15 yards to adds position
-            {
-                // Move directly away from adds position in 5yd increments
-                float angle = atan2(bot->GetPositionY() - ICC_LICH_KING_ADDS_POSITION.GetPositionY(),
-                                    bot->GetPositionX() - ICC_LICH_KING_ADDS_POSITION.GetPositionX());
-                float moveDistance = 5.0f;                                  // Always move 5 yards away
-                float x = bot->GetPositionX() + cos(angle) * moveDistance;  // Move from current position
-                float y = bot->GetPositionY() + sin(angle) * moveDistance;
-                float z = bot->GetPositionZ();  // Use bot's Z to prevent going underground
-
-                return MoveTo(bot->GetMapId(), x, y, z, false, false, false, false, MovementPriority::MOVEMENT_COMBAT);
-            }
-        }
-    }
-
-    // Handle assist tanks - keep them at adds position
-    if (botAI->IsAssistTank(bot) && !boss->HealthBelowPct(70))
+    if (!boss)
+    {}
+    else if (botAI->IsAssistTank(bot) && !boss->HealthBelowPct(71))
     {
         // Actively look for any shambling/spirit/ghoul that isn't targeting us
         GuidVector targets = AI_VALUE(GuidVector, "possible targets");
@@ -3520,49 +3750,39 @@ bool IccLichKingAddsAction::Execute(Event event)
         }
 
         // Return to adds position if we're too far
-        if (bot->GetExactDist2d(ICC_LICH_KING_ADDS_POSITION) > 5.0f && !boss->HealthBelowPct(70))
+        if (bot->GetExactDist2d(ICC_LICH_KING_ADDS_POSITION) > 1.0f && !boss->HealthBelowPct(71))
         {
             return MoveTo(bot->GetMapId(), ICC_LICH_KING_ADDS_POSITION.GetPositionX(),
                           ICC_LICH_KING_ADDS_POSITION.GetPositionY(), ICC_LICH_KING_ADDS_POSITION.GetPositionZ(), false,
                           false, false, true, MovementPriority::MOVEMENT_FORCED, true, false);
         }
-
+        
         return false;  // Stay in position and keep facing current target
     }
 
-    if (botAI->IsMainTank(bot) && !boss->HealthBelowPct(71))
+    if (!boss)
+    {}
+    else if (botAI->IsMelee(bot) && !botAI->IsAssistTank(bot) && !boss->HealthBelowPct(71) && !hasPlague)
     {
-        float currentDist = bot->GetDistance(ICC_LICH_KING_ADDS_POSITION);
-        if (currentDist < 20.0f || currentDist > 30.0f)  // 15 yards ±3 yards tolerance
+        float currentDist = bot->GetDistance(ICC_LICH_KING_MELEE_POSITION);
+        if (currentDist > 2.0f)
         {
-            float angle = ICC_LICH_KING_ADDS_POSITION.GetAngle(bot);
-            float targetDist = 21.0f;
-            float moveDistance = currentDist < targetDist ? 3.0f : -3.0f;  // Move away or towards in 5yd increments
-
-            float x = bot->GetPositionX() + cos(angle) * moveDistance;
-            float y = bot->GetPositionY() + sin(angle) * moveDistance;
-            float z = ICC_LICH_KING_ADDS_POSITION.GetPositionZ();
-
-            return MoveTo(bot->GetMapId(), x, y, z, false, false, false, true, MovementPriority::MOVEMENT_FORCED, true,
-                          false);
+            return MoveTo(bot->GetMapId(), ICC_LICH_KING_MELEE_POSITION.GetPositionX(),
+                          ICC_LICH_KING_MELEE_POSITION.GetPositionY(), ICC_LICH_KING_MELEE_POSITION.GetPositionZ(),
+                          false, false, false, true, MovementPriority::MOVEMENT_FORCED, true, false);
         }
     }
 
-    if (botAI->IsRanged(bot) && !boss->HealthBelowPct(71))
+    if (!boss)
+    {}
+    else if (botAI->IsRanged(bot) && !boss->HealthBelowPct(71) && !hasPlague && !(diff == RAID_DIFFICULTY_10MAN_HEROIC || diff == RAID_DIFFICULTY_25MAN_HEROIC))
     {
-        float currentDist = bot->GetDistance(ICC_LICH_KING_ADDS_POSITION);
-        if (currentDist < 21.0f)  // 20 yards ±3 yards tolerance
+        float currentDist = bot->GetDistance(ICC_LICH_KING_RANGED_POSITION);
+        if (currentDist > 2.0f)
         {
-            float angle = ICC_LICH_KING_ADDS_POSITION.GetAngle(bot);
-            float targetDist = 26.0f;
-            float moveDistance = currentDist < targetDist ? 5.0f : -5.0f;  // Move away or towards in 5yd increments
-
-            float x = bot->GetPositionX() + cos(angle) * moveDistance;
-            float y = bot->GetPositionY() + sin(angle) * moveDistance;
-            float z = ICC_LICH_KING_ADDS_POSITION.GetPositionZ();
-
-            return MoveTo(bot->GetMapId(), x, y, z, false, false, false, true, MovementPriority::MOVEMENT_FORCED, true,
-                          false);
+            return MoveTo(bot->GetMapId(), ICC_LICH_KING_RANGED_POSITION.GetPositionX(),
+                          ICC_LICH_KING_RANGED_POSITION.GetPositionY(), ICC_LICH_KING_RANGED_POSITION.GetPositionZ(),
+                          false, false, false, true, MovementPriority::MOVEMENT_FORCED, true, false);
         }
     }
 
@@ -3634,7 +3854,9 @@ bool IccLichKingAddsAction::Execute(Event event)
         }
 
         // If we need to move, find the safest direction
-        if (needToMove)
+        if (!boss)
+        {}
+        else if (needToMove)
         {
             // Try 16 different angles for more precise movement
             for (int i = 0; i < 16; i++)
@@ -3699,7 +3921,9 @@ bool IccLichKingAddsAction::Execute(Event event)
     }
 
     // Check if LK is casting Defile - make bots spread
-    if (boss && boss->HasUnitState(UNIT_STATE_CASTING) && boss->FindCurrentSpellBySpellId(72762))
+    if (!boss)
+    {}
+    else if (boss && boss->HasUnitState(UNIT_STATE_CASTING) && boss->FindCurrentSpellBySpellId(72762))
     {
         uint32 playerCount = 0;
         uint32 botIndex = 0;
@@ -3925,21 +4149,24 @@ bool IccLichKingAddsAction::Execute(Event event)
     for (auto& npc : npcs3)
     {
         Unit* unit = botAI->GetUnit(npc);
-        if (unit && (unit->GetEntry() == 37799 || unit->GetEntry() == 39284 || unit->GetEntry() == 39285 || unit->GetEntry() == 39286))  // Vile spirits ID
-        {
-            // Only run away if the vile spirit is targeting us
-            if (unit->GetVictim() == bot && !botAI->IsTank(bot))
-            {
-                float currentDistance = bot->GetDistance2d(unit);
+        if (!unit || unit->GetEntry() != 37799 || unit->GetEntry() != 39284 || unit->GetEntry() != 39285 ||
+            unit->GetEntry() != 39286)  // vile spirit ID
+            continue;
 
-                // Move away from the Vengeful Shade if the bot is too close
-                if (currentDistance < radiusvile)
-                {
-                    return MoveAway(unit, radiusvile - currentDistance);
-                }
+        // Only run away if the spirit is targeting us
+        // Check by GUID comparison to ensure we're accurately identifying the specific spirit in 25HC multiple spirits spawn
+        if (unit->GetVictim() && unit->GetVictim()->GetGUID() == bot->GetGUID())
+        {
+            float currentDistance = bot->GetDistance2d(unit);
+
+            // Move away from the spirit if the bot is too close
+            if (currentDistance < radiusvile)
+            {
+                botAI->Reset();  // forces bot to stop channeling or getting locked by any other action
+                return MoveAway(unit, radiusvile - currentDistance);
             }
         }
     }
-
     return false;
 }
+
