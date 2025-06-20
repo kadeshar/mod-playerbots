@@ -157,7 +157,7 @@ PlayerbotAI::PlayerbotAI(Player* bot)
     masterIncomingPacketHandlers.AddHandler(CMSG_GAMEOBJ_USE, "use game object");
     masterIncomingPacketHandlers.AddHandler(CMSG_AREATRIGGER, "area trigger");
     // masterIncomingPacketHandlers.AddHandler(CMSG_GAMEOBJ_USE, "use game object");
-    masterIncomingPacketHandlers.AddHandler(CMSG_LOOT_ROLL, "loot roll");
+    // masterIncomingPacketHandlers.AddHandler(CMSG_LOOT_ROLL, "loot roll");
     masterIncomingPacketHandlers.AddHandler(CMSG_GOSSIP_HELLO, "gossip hello");
     masterIncomingPacketHandlers.AddHandler(CMSG_QUESTGIVER_HELLO, "gossip hello");
     masterIncomingPacketHandlers.AddHandler(CMSG_ACTIVATETAXI, "activate taxi");
@@ -797,6 +797,7 @@ bool PlayerbotAI::IsAllowedCommand(std::string const text)
         unsecuredCommands.insert("sendmail");
         unsecuredCommands.insert("invite");
         unsecuredCommands.insert("leave");
+        unsecuredCommands.insert("lfg");
         unsecuredCommands.insert("rpg status");
     }
 
@@ -4364,26 +4365,28 @@ bool PlayerbotAI::AllowActivity(ActivityType activityType, bool checkNow)
 
 uint32 PlayerbotAI::AutoScaleActivity(uint32 mod)
 {
+    // Current max server update time (ms), and the configured floor/ceiling values for bot scaling
     uint32 maxDiff = sWorldUpdateTime.GetMaxUpdateTimeOfCurrentTable();
     uint32 diffLimitFloor = sPlayerbotAIConfig->botActiveAloneSmartScaleDiffLimitfloor;
     uint32 diffLimitCeiling = sPlayerbotAIConfig->botActiveAloneSmartScaleDiffLimitCeiling;
-    double spreadSize = (double)(diffLimitCeiling - diffLimitFloor) / 6;
 
-    // apply scaling
+    if (diffLimitCeiling <= diffLimitFloor)
+    {
+        // Perfrom binary decision if ceiling <= floor: Either all bots are active or none are
+        return (maxDiff > diffLimitCeiling) ? 0 : mod;
+    }
+    
     if (maxDiff > diffLimitCeiling)
         return 0;
-    if (maxDiff > diffLimitFloor + (4 * spreadSize))
-        return (mod * 1) / 10;
-    if (maxDiff > diffLimitFloor + (3 * spreadSize))
-        return (mod * 3) / 10;
-    if (maxDiff > diffLimitFloor + (2 * spreadSize))
-        return (mod * 5) / 10;
-    if (maxDiff > diffLimitFloor + (1 * spreadSize))
-        return (mod * 7) / 10;
-    if (maxDiff > diffLimitFloor)
-        return (mod * 9) / 10;
-
-    return mod;
+    
+    if (maxDiff <= diffLimitFloor)
+        return mod;
+    
+    // Calculate lag progress from floor to ceiling (0 to 1)
+    double lagProgress = (maxDiff - diffLimitFloor) / (double)(diffLimitCeiling - diffLimitFloor);
+    
+    // Apply the percentage of active bots (the complement of lag progress) to the mod value
+    return static_cast<uint32>(mod * (1 - lagProgress));
 }
 
 bool PlayerbotAI::IsOpposing(Player* player) { return IsOpposing(player->getRace(), bot->getRace()); }

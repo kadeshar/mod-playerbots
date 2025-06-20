@@ -96,7 +96,9 @@ AiPlayerbot.RandomBotAccountCount = 0
 # To apply this, set the number to 1 and run the Worldserver. Once deletion is complete, if you would like to recreate randombots, set the number back to 0 and rerun the Worldserver.
 AiPlayerbot.DeleteRandomBotAccounts = 0
 
-# Disabled without real player
+# Disable randombots when no real players are logged in
+# Default: 0 (randombots will login when server starts)
+# If enabled, randombots will only log in 30 seconds (default) after a real player logs in, and will log out 300 seconds (default) after all real players log out
 AiPlayerbot.DisabledWithoutRealPlayer = 0
 AiPlayerbot.DisabledWithoutRealPlayerLoginDelay = 30
 AiPlayerbot.DisabledWithoutRealPlayerLogoutDelay = 300
@@ -129,6 +131,11 @@ AiPlayerbot.AddClassAccountPoolSize = 50
 # Bot group invitation permission level (0 = GM only, 1 = accept based on level, 2 = always accept)
 # Default: 1 (accept based on level)
 AiPlayerbot.GroupInvitationPermission = 1
+
+# Keep alt bots in the party even when the master leaves
+# 0 = disabled (default behavior)
+# 1 = enabled (prevents bots from automatically leaving the group)
+AiPlayerbot.KeepAltsInGroup = 0
 
 # Auto-login all player alts as altbots on player login
 AiPlayerbot.BotAutologin = 0
@@ -475,6 +482,15 @@ AiPlayerbot.AutoGearCommandAltBots = 1
 AiPlayerbot.AutoGearQualityLimit = 3
 
 # Equipment item level (not gearscore) limitation for autogear command (0 = no limit)
+# Classic
+# Max iLVL Tier 1 = 66 | Tier 2 = 76 | Tier 2.5 = 81 | Tier 3 = 99
+# Max iLVL Phase 1 = 71(MC, ONY, ZG) | Phase 2(BWL) = 77 | Phase 2.5(AQ) = 88 | Phase 3(NAXX) = 100 (NOT RECOMMENDED SINCE ILVL OVERLAPS BETWEEN TIERS)
+# TBC
+# Max iLVL Tier 4 = 120 | Tier 5 = 133 | Tier 6 = 164
+# Max iLVL Phase 1(Kara, Gruul, Mag) = 125 | Phase 1.5(ZA) = 138 | Phase 2(SC, TK) = 141 | Phase 3(Hyjal, BT) = 156 | Phase 4(Sunwell) = 164
+# Wotlk
+# Max iLVL Tier 7(10/25) = 200/213 | Tier 8(10/25) = 225/232 | Tier 9(10/25) = 232/245 | Tier 10(10/25/HC) = 251/264/290
+# Max iLVL Phase 1(Naxx) = 224 | Phase 2(Ulduar) = 245 | Phase 3(ToC) = 258 | Phase 4(ICC) = 290 
 # Default: 0 (no limit)
 AiPlayerbot.AutoGearScoreLimit = 0
 
@@ -625,6 +641,15 @@ AiPlayerbot.RandomBotXPRate = 1.0
 AiPlayerbot.RandomGearQualityLimit = 3
 
 # Equipment item level (not gearscore) limitation for randombots (0 = no limit)
+# Classic
+# Max iLVL Tier 1 = 66 | Tier 2 = 76 | Tier 2.5 = 81 | Tier 3 = 99
+# Max iLVL Phase 1 = 71(MC, ONY, ZG) | Phase 2(BWL) = 77 | Phase 2.5(AQ) = 88 | Phase 3(NAXX) = 100 (NOT RECOMMENDED SINCE ILVL OVERLAPS BETWEEN TIERS)
+# TBC
+# Max iLVL Tier 4 = 120 | Tier 5 = 133 | Tier 6 = 164
+# Max iLVL Phase 1(Kara, Gruul, Mag) = 125 | Phase 1.5(ZA) = 138 | Phase 2(SC, TK) = 141 | Phase 3(Hyjal, BT) = 156 | Phase 4(Sunwell) = 164
+# Wotlk
+# Max iLVL Tier 7(10/25) = 200/213 | Tier 8(10/25) = 225/232 | Tier 9(10/25) = 232/245 | Tier 10(10/25/HC) = 251/264/290
+# Max iLVL Phase 1(Naxx) = 224 | Phase 2(Ulduar) = 245 | Phase 3(ToC) = 258 | Phase 4(ICC) = 290 
 # Default: 0 (no limit)
 AiPlayerbot.RandomGearScoreLimit = 0
 
@@ -692,8 +717,8 @@ AiPlayerbot.BotActiveAloneForceWhenInGuild = 1
 # The default is 1. When enabled (smart) scales the 'BotActiveAlone' value.
 # (The scaling will be overruled by the BotActiveAloneForceWhen...rules)
 #
-#   Limitfloor - when DIFF (latency) above floor, activity scaling is applied starting with 90%
-#   LimitCeiling - when DIFF (latency) above ceiling, activity is 0%;
+#   Limitfloor - when DIFF (latency) is above floor, activity scaling begins
+#   LimitCeiling - when DIFF (latency) is above ceiling, activity is 0%
 #
 #   MinLevel - only apply scaling when level is above or equal to min(bot)Level
 #   MaxLevel - only apply scaling when level is lower or equal of max(bot)Level
@@ -1801,6 +1826,14 @@ AiPlayerbot.AllowedLogFiles = ""
 #
 ####################################################################################################
 
+####################################################################################################
+# A list of gameObject GUID's that are not allowed for bots to interact with.
+# Example: 176213 = Blood of Heroes
+# Example: 17155 = Defias Gunpowder
+AiPlayerbot.DisallowedGameObjects = 176213,17155
+#
+####################################################################################################
+
 ##############################################
 # Deprecated Settings (yet still in use)     #
 ##############################################
@@ -1855,3 +1888,9 @@ AiPlayerbot.TargetPosRecalcDistance = 0.1
 
 # Allow bots to be summoned near innkeepers
 AiPlayerbot.SummonAtInnkeepersEnabled = 1
+
+# Enable buffs in ICC to make Heroic easier and more casual.
+# 30% more damage, 40% damage reduction (tank bots), increased all resistances, reduced threat for non tank bots, increased threat for tank bots.
+# Buffs will be applied on PP, Sindragosa and Lich King
+
+AiPlayerbot.EnableICCBuffs = 1

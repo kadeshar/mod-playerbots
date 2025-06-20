@@ -15,8 +15,6 @@
 
 bool LootRollAction::Execute(Event event)
 {
-    Player* bot = QueryItemUsageAction::botAI->GetBot();
-
     Group* group = bot->GetGroup();
     if (!group)
         return false;
@@ -91,7 +89,14 @@ bool LootRollAction::Execute(Event event)
         {
             if (vote == NEED)
             {
-                vote = GREED;
+                if (RollUniqueCheck(proto, bot))
+                    {
+                        vote = PASS;
+                    }
+                else 
+                    {
+                        vote = GREED;
+                    }
             }
             else if (vote == GREED)
             {
@@ -108,61 +113,11 @@ bool LootRollAction::Execute(Event event)
                 group->CountRollVote(bot->GetGUID(), guid, vote);
                 break;
         }
+        // One item at a time
+        return true;
     }
-	
-    // WorldPacket p(event.getPacket()); //WorldPacket packet for CMSG_LOOT_ROLL, (8+4+1)
-    // p.rpos(0); //reset packet pointer
-    // p >> guid; //guid of the item rolled
-    // p >> slot; //number of players invited to roll
-    // p >> rollType; //need,greed or pass on roll
 
-    // std::vector<Roll*> rolls = group->GetRolls();
-    // bot->Say("guid:" + std::to_string(guid.GetCounter()) +
-    //     "item entry:" + std::to_string(guid.GetEntry()), LANG_UNIVERSAL);
-    // for (std::vector<Roll*>::iterator i = rolls.begin(); i != rolls.end(); ++i)
-    // {
-    //     if ((*i)->isValid() && (*i)->itemGUID == guid && (*i)->itemSlot == slot)
-    //     {
-    //         uint32 itemId = (*i)->itemid;
-    //         bot->Say("item entry2:" + std::to_string(itemId), LANG_UNIVERSAL);
-    //         ItemTemplate const *proto = sObjectMgr->GetItemTemplate(itemId);
-    //         if (!proto)
-    //             continue;
-
-    //         switch (proto->Class)
-    //         {
-    //         case ITEM_CLASS_WEAPON:
-    //         case ITEM_CLASS_ARMOR:
-    //             if (!QueryItemUsage(proto).empty())
-    //                 vote = NEED;
-    //             else if (bot->HasSkill(SKILL_ENCHANTING))
-    //                 vote = DISENCHANT;
-    //             break;
-    //         default:
-    //             if (StoreLootAction::IsLootAllowed(itemId, botAI))
-    //                 vote = NEED;
-    //             break;
-    //         }
-    //         break;
-    //     }
-    // }
-
-    // if (ItemTemplate const* proto = sObjectMgr->GetItemTemplate(guid.GetEntry()))
-    // {
-    //     switch (proto->Class)
-    //     {
-    //         case ITEM_CLASS_WEAPON:
-    //         case ITEM_CLASS_ARMOR:
-    //             if (!QueryItemUsage(proto).empty())
-    //                 vote = NEED;
-    //             break;
-    //         default:
-    //             if (StoreLootAction::IsLootAllowed(guid.GetEntry(), botAI))
-    //                 vote = NEED;
-    //             break;
-    //     }
-    // }
-    return true;
+    return false;
 }
 
 
@@ -247,4 +202,25 @@ bool CanBotUseToken(ItemTemplate const* proto, Player* bot)
     }
 
     return false; // Bot's class cannot use this token
+}
+
+bool RollUniqueCheck(ItemTemplate const* proto, Player* bot)
+{
+    // Count the total number of the item (equipped + in bags)
+    uint32 totalItemCount = bot->GetItemCount(proto->ItemId, true);
+
+    // Count the number of the item in bags only
+    uint32 bagItemCount = bot->GetItemCount(proto->ItemId, false);
+
+    // Determine if the unique item is already equipped
+    bool isEquipped = (totalItemCount > bagItemCount);
+    if (isEquipped && proto->HasFlag(ITEM_FLAG_UNIQUE_EQUIPPABLE))
+    {
+        return true;  // Unique Item is already equipped
+    }
+    else if (proto->HasFlag(ITEM_FLAG_UNIQUE_EQUIPPABLE) && (bagItemCount > 1))
+    {
+        return true; // Unique item already in bag, don't roll for it
+    }
+    return false; // Item is not equipped or in bags, roll for it
 }
