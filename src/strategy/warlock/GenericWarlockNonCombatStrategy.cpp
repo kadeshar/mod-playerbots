@@ -80,7 +80,8 @@ void GenericWarlockNonCombatStrategy::InitTriggers(std::vector<TriggerNode*>& tr
     NonCombatStrategy::InitTriggers(triggers);
     triggers.push_back(new TriggerNode("has pet", NextAction::array(0, new NextAction("toggle pet spell", 60.0f), nullptr)));
     triggers.push_back(new TriggerNode("no pet", NextAction::array(0, new NextAction("fel domination", 30.0f), nullptr)));
-    triggers.push_back(new TriggerNode("no soul shard", NextAction::array(0, new NextAction("create soul shard", 29.5f), nullptr)));
+    triggers.push_back(new TriggerNode("no soul shard", NextAction::array(0, new NextAction("create soul shard", 60.0f), nullptr)));
+    triggers.push_back(new TriggerNode("too many soul shards", NextAction::array(0, new NextAction("destroy soul shard", 60.0f), nullptr)));
     triggers.push_back(new TriggerNode("soul link", NextAction::array(0, new NextAction("soul link", 28.0f), nullptr)));
     triggers.push_back(new TriggerNode("demon armor", NextAction::array(0, new NextAction("fel armor", 27.0f), nullptr)));
     triggers.push_back(new TriggerNode("no healthstone", NextAction::array(0, new NextAction("create healthstone", 26.0f), nullptr)));
@@ -97,6 +98,7 @@ SummonImpStrategy::SummonImpStrategy(PlayerbotAI* ai) : NonCombatStrategy(ai) {}
 void SummonImpStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     triggers.push_back(new TriggerNode("no pet", NextAction::array(0, new NextAction("summon imp", 29.0f), NULL)));
+    triggers.push_back(new TriggerNode("wrong pet", NextAction::array(0, new NextAction("summon imp", 29.0f), NULL)));
 }
 
 // Non-combat strategy for summoning a Voidwalker
@@ -108,6 +110,7 @@ SummonVoidwalkerStrategy::SummonVoidwalkerStrategy(PlayerbotAI* ai) : NonCombatS
 void SummonVoidwalkerStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     triggers.push_back(new TriggerNode("no pet", NextAction::array(0, new NextAction("summon voidwalker", 29.0f), NULL)));
+    triggers.push_back(new TriggerNode("wrong pet", NextAction::array(0, new NextAction("summon voidwalker", 29.0f), NULL)));
 }
 
 // Non-combat strategy for summoning a Succubus
@@ -119,6 +122,7 @@ SummonSuccubusStrategy::SummonSuccubusStrategy(PlayerbotAI* ai) : NonCombatStrat
 void SummonSuccubusStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     triggers.push_back(new TriggerNode("no pet", NextAction::array(0, new NextAction("summon succubus", 29.0f), NULL)));
+    triggers.push_back(new TriggerNode("wrong pet", NextAction::array(0, new NextAction("summon succubus", 29.0f), NULL)));
 }
 
 // Non-combat strategy for summoning a Felhunter
@@ -130,6 +134,7 @@ SummonFelhunterStrategy::SummonFelhunterStrategy(PlayerbotAI* ai) : NonCombatStr
 void SummonFelhunterStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     triggers.push_back(new TriggerNode("no pet", NextAction::array(0, new NextAction("summon felhunter", 29.0f), NULL)));
+    triggers.push_back(new TriggerNode("wrong pet", NextAction::array(0, new NextAction("summon felhunter", 29.0f), NULL)));
 }
 
 // Non-combat strategy for summoning a Felguard
@@ -141,6 +146,7 @@ SummonFelguardStrategy::SummonFelguardStrategy(PlayerbotAI* ai) : NonCombatStrat
 void SummonFelguardStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     triggers.push_back(new TriggerNode("no pet", NextAction::array(0, new NextAction("summon felguard", 29.0f), NULL)));
+    triggers.push_back(new TriggerNode("wrong pet", NextAction::array(0, new NextAction("summon felguard", 29.0f), NULL)));
 }
 
 // Non-combat strategy for selecting themselves to receive soulstone
