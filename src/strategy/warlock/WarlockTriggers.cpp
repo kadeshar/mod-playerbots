@@ -6,6 +6,8 @@
 #include "WarlockTriggers.h"
 #include "GenericTriggers.h"
 #include "Playerbots.h"
+#include "PlayerbotAI.h"
+#include "Player.h"
 
 static const uint32 SOUL_SHARD_ITEM_ID = 6265;
 
@@ -44,7 +46,7 @@ bool WarlockConjuredItemTrigger::IsActive()
 
 bool OutOfSoulShardsTrigger::IsActive() { return GetSoulShardCount(botAI->GetBot()) == 0; }
 
-bool TooManySoulShardsTrigger::IsActive() { return GetSoulShardCount(botAI->GetBot()) >= 6; }
+bool TooManySoulShardsTrigger::IsActive() { return GetSoulShardCount(botAI->GetBot()) >= 26; }
 
 bool OutOfSoulstoneTrigger::IsActive() { return GetSoulstoneCount(botAI->GetBot()) == 0; }
 
@@ -205,7 +207,11 @@ bool WrongPetTrigger::IsActive()
     if (enabledCount != 1)
         return false;
 
-    // Step 3: At this point, we know only one pet strategy is enabled.
+    // Step 3: If there is no pet, do not trigger.
+    if (!pet)
+        return false;
+
+    // Step 4: At this point, we know only one pet strategy is enabled.
     //         We check if the currently summoned pet matches the enabled strategy.
     bool correctPet = false;
     if (pet)
@@ -216,15 +222,44 @@ bool WrongPetTrigger::IsActive()
             correctPet = true;
     }
 
-    // Step 4: If the correct pet is already summoned, the trigger should not activate.
+    // Step 5: If the correct pet is already summoned, the trigger should not activate.
     if (correctPet)
         return false;
 
-    // Step 5: Finally, check if the bot actually knows the spell to summon the desired pet.
+    // Step 6: Finally, check if the bot actually knows the spell to summon the desired pet.
     //         If so, the trigger is active (bot should summon the correct pet).
     if (bot->HasSpell(enabledPet->spellId))
         return true;
 
-    // Step 6: If we get here, the bot doesn't know the spell required to support the active pet strategy
+    // Step 7: If we get here, the bot doesn't know the spell required to support the active pet strategy
+    return false;
+}
+
+const std::set<uint32> RainOfFireChannelCheckTrigger::RAIN_OF_FIRE_SPELL_IDS = {
+    5740,   // Rain of Fire Rank 1
+    6219,   // Rain of Fire Rank 2
+    11677,  // Rain of Fire Rank 3
+    11678,  // Rain of Fire Rank 4
+    27212,  // Rain of Fire Rank 5
+    47819,  // Rain of Fire Rank 6
+    47820   // Rain of Fire Rank 7
+};
+
+bool RainOfFireChannelCheckTrigger::IsActive()
+{
+    Player* bot = botAI->GetBot();
+
+    // Check if the bot is channeling a spell
+    if (Spell* spell = bot->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
+    {
+        // Only trigger if the spell being channeled is Rain of Fire
+        if (RAIN_OF_FIRE_SPELL_IDS.count(spell->m_spellInfo->Id))
+        {
+            uint8 attackerCount = AI_VALUE(uint8, "attacker count");
+            return attackerCount < minEnemies;
+        }
+    }
+
+    // Not channeling Rain of Fire
     return false;
 }

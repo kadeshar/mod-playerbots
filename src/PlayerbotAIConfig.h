@@ -402,6 +402,12 @@ public:
 
     static std::vector<std::vector<uint32>> ParseTempTalentsOrder(uint32 cls, std::string temp_talents_order);
     static std::vector<std::vector<uint32>> ParseTempPetTalentsOrder(uint32 spec, std::string temp_talents_order);
+
+    bool restrictHealerDPS = false;
+    std::vector<uint32> restrictedHealerDPSMaps;
+    bool IsRestrictedHealerDPSMap(uint32 mapId) const;
+
+    std::vector<uint32> excludedHunterPetFamilies;
 };
 
 #define sPlayerbotAIConfig PlayerbotAIConfig::instance()
