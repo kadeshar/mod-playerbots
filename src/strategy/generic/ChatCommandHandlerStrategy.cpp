@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
- * and/or modify it under version 2 of the License, or (at your option), any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #include "ChatCommandHandlerStrategy.h"
@@ -93,13 +93,13 @@ void ChatCommandHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
     triggers.push_back(
         new TriggerNode("disperse", NextAction::array(0, new NextAction("disperse set", relevance), NULL)));
     triggers.push_back(
-	    new TriggerNode("open items", NextAction::array(0, new NextAction("open items", relevance), nullptr)));
+        new TriggerNode("open items", NextAction::array(0, new NextAction("open items", relevance), nullptr)));
     triggers.push_back(
         new TriggerNode("qi", NextAction::array(0, new NextAction("query item usage", relevance), nullptr)));
     triggers.push_back(
-	    new TriggerNode("unlock items", NextAction::array(0, new NextAction("unlock items", relevance), nullptr)));
+        new TriggerNode("unlock items", NextAction::array(0, new NextAction("unlock items", relevance), nullptr)));
     triggers.push_back(
-	    new TriggerNode("unlock traded item", NextAction::array(0, new NextAction("unlock traded item", relevance), nullptr)));
+        new TriggerNode("unlock traded item", NextAction::array(0, new NextAction("unlock traded item", relevance), nullptr)));
     triggers.push_back(
         new TriggerNode("wipe", NextAction::array(0, new NextAction("wipe", relevance), nullptr)));
     triggers.push_back(new TriggerNode("tame", NextAction::array(0, new NextAction("tame", relevance), nullptr)));

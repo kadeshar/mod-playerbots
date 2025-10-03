@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
- * and/or modify it under version 2 of the License, or (at your option), any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #ifndef _PLAYERBOT_PALADINTRIGGERS_H
@@ -238,7 +238,7 @@ class BlessingOfSanctuaryOnPartyTrigger : public BuffOnPartyTrigger
 {
 public:
     BlessingOfSanctuaryOnPartyTrigger(PlayerbotAI* botAI)
-        : BuffOnPartyTrigger(botAI, "blessing of sanctuary,blessing of kings", 2 * 2000)
+        : BuffOnPartyTrigger(botAI, "blessing of sanctuary", 2 * 2000)
     {
     }
 };

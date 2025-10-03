@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
- * and/or modify it under version 2 of the License, or (at your option), any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #ifndef _PLAYERBOT_GENERICSHAMANSTRATEGY_H
@@ -18,24 +18,6 @@ public:
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
 };
 
-class ShamanBuffDpsStrategy : public Strategy
-{
-public:
-    ShamanBuffDpsStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}
-
-    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
-    std::string const getName() override { return "bdps"; }
-};
-
-class ShamanBuffManaStrategy : public Strategy
-{
-public:
-    ShamanBuffManaStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}
-
-    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
-    std::string const getName() override { return "bmana"; }
-};
-
 class ShamanCureStrategy : public Strategy
 {
 public:
@@ -45,13 +27,22 @@ public:
     std::string const getName() override { return "cure"; }
 };
 
-class ShamanHealerDpsStrategy : public Strategy
+class ShamanBoostStrategy : public Strategy
 {
 public:
-    ShamanHealerDpsStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}
+    ShamanBoostStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}
 
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
-    std::string const getName() override { return "healer dps"; }
+    std::string const getName() override { return "boost"; }
+};
+
+class ShamanAoeStrategy : public CombatStrategy
+{
+public:
+    ShamanAoeStrategy(PlayerbotAI* botAI) : CombatStrategy(botAI) {}
+
+    void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    std::string const getName() override { return "aoe"; }
 };
 
 #endif

@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU GPL v2 license, you may redistribute it
- * and/or modify it under version 2 of the License, or (at your option), any later version.
+ * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
+ * and/or modify it under version 3 of the License, or (at your option), any later version.
  */
 
 #include "GuildManagementActions.h"
@@ -90,7 +90,11 @@ void GuildInviteAction::SendPacket(WorldPacket packet)
     bot->GetSession()->HandleGuildInviteOpcode(data);
 }
 
-bool GuildInviteAction::PlayerIsValid(Player* member) { return !member->GetGuildId(); }
+bool GuildInviteAction::PlayerIsValid(Player* member)
+{
+    return !member->GetGuildId() && (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GUILD) ||
+                                     (bot->GetTeamId() == member->GetTeamId()));
+}
 
 bool GuildPromoteAction::isUseful()
 {
@@ -205,7 +209,7 @@ bool GuildManageNearbyAction::Execute(Event event)
             if (botAi->GetGuilderType() == GuilderType::SOLO && !botAi->HasRealPlayerMaster()) //Do not invite solo players.
                 continue;
 
-            if (botAi->HasActivePlayerMaster() && !sRandomPlayerbotMgr->IsRandomBot(player)) //Do not invite alts of active players. 
+            if (botAi->HasActivePlayerMaster() && !sRandomPlayerbotMgr->IsRandomBot(player)) //Do not invite alts of active players.
                 continue;
         }
 
