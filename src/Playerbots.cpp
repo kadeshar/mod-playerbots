@@ -25,6 +25,7 @@
 #include "Metric.h"
 #include "PlayerScript.h"
 #include "PlayerbotAIConfig.h"
+#include "PlayerbotMgr.h"
 #include "RandomPlayerbotMgr.h"
 #include "ScriptMgr.h"
 #include "cs_playerbots.h"
@@ -327,6 +328,11 @@ public:
         sPlayerbotAIConfig->Initialize();
 
         LOG_INFO("server.loading", ">> Loaded playerbots config in {} ms", GetMSTimeDiffToNow(oldMSTime));
+
+        // Clean up expired invite codes on server startup
+        PlayerbotMgr::CleanupExpiredInviteCodes();
+        LOG_INFO("server.loading", ">> Cleaned up expired invite codes");
+
         LOG_INFO("server.loading", " ");
     }
 };
