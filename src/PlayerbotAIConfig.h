@@ -24,7 +24,7 @@ enum class BotCheatMask : uint32
     power = 16,
     raid = 32,
     food = 64,
-    maxMask = 128
+    maxMask = 256
 };
 
 enum class HealingManaEfficiency : uint8
