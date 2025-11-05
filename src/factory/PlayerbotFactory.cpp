@@ -234,7 +234,7 @@ void PlayerbotFactory::Init()
             continue;
         }
 
-        if (proto->Flags & ITEM_FLAG_UNIQUE_EQUIPPABLE)
+        if (proto->HasFlag(ITEM_FLAG_UNIQUE_EQUIPPABLE))
         {
             continue;
         }
@@ -1445,7 +1445,7 @@ bool PlayerbotFactory::CanEquipArmor(ItemTemplate const* proto)
     // for (uint8 j = 0; j < MAX_ITEM_PROTO_STATS; ++j)
     // {
     //     // for ItemStatValue != 0
-    //     if(!proto->ItemStat[j].ItemStatValue)
+    //     if (!proto->ItemStat[j].ItemStatValue)
     //         continue;
 
     //     AddItemStats(proto->ItemStat[j].ItemStatType, sp, ap, tank);
@@ -1654,7 +1654,8 @@ void Shuffle(std::vector<uint32>& items)
 //         bool noItem = false;
 //         uint32 quality = urand(ITEM_QUALITY_UNCOMMON, ITEM_QUALITY_EPIC);
 //         uint32 attempts = 10;
-//         if (urand(0, 100) < 100 * sPlayerbotAIConfig->randomGearLoweringChance && quality > ITEM_QUALITY_NORMAL) {
+//         if (urand(0, 100) < 100 * sPlayerbotAIConfig->randomGearLoweringChance && quality > ITEM_QUALITY_NORMAL)
+//         {
 //             quality--;
 //         }
 //         // current item;
@@ -1759,7 +1760,8 @@ void PlayerbotFactory::InitEquipment(bool incremental, bool second_chance)
     if (incremental && !sPlayerbotAIConfig->incrementalGearInit)
         return;
 
-    if (level < 5) {
+    if (level < 5)
+    {
         // original items
         if (CharStartOutfitEntry const* oEntry = GetCharStartOutfitEntry(bot->getRace(), bot->getClass(), bot->getGender()))
         {
@@ -1788,7 +1790,8 @@ void PlayerbotFactory::InitEquipment(bool incremental, bool second_chance)
                     continue;
                 }
 
-                if (bot->HasItemCount(itemId, count)) {
+                if (bot->HasItemCount(itemId, count))
+                {
                     continue;
                 }
 
@@ -2825,7 +2828,8 @@ void PlayerbotFactory::InitTalents(uint32 specNo)
 
 void PlayerbotFactory::InitTalentsByTemplate(uint32 specTab)
 {
-    // if (sPlayerbotAIConfig->parsedSpecLinkOrder[bot->getClass()][specNo][80].size() == 0) {
+    // if (sPlayerbotAIConfig->parsedSpecLinkOrder[bot->getClass()][specNo][80].size() == 0)
+    // {
     //     return;
     // }
     uint32 cls = bot->getClass();
