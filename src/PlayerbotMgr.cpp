@@ -45,17 +45,20 @@ namespace {
     constexpr uint32 MAX_INVITE_CODES_PER_ACCOUNT = 3;
 
     // Helper function to get current timestamp
-    uint64 GetCurrentTimestamp() {
+    uint64 GetCurrentTimestamp()
+    {
         return GetEpochTime().count();
     }
 
     // Generic error response to prevent information leakage
-    void SendGenericError(ChatHandler& handler, const std::string& operation) {
+    void SendGenericError(ChatHandler& handler, const std::string& operation)
+    {
         handler.PSendSysMessage("Unable to complete {} operation. Please verify your parameters and try again.", operation.c_str());
     }
 
     // Helper function to generate secure invite code using AzerothCore's OpenSSL-based crypto random
-    std::string GenerateInviteCode() {
+    std::string GenerateInviteCode()
+    {
         const char chars[] = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Excluded confusing chars (0,O,1,I)
         const size_t charCount = sizeof(chars) - 1;
 
@@ -65,8 +68,10 @@ namespace {
 
         // Generate code in format XXXX-XXXX-XXXX using OpenSSL's secure random generator
         std::string code;
-        for (int i = 0; i < 12; ++i) {
-            if (i == 4 || i == 8) {
+        for (int i = 0; i < 12; ++i)
+        {
+            if (i == 4 || i == 8)
+            {
                 code += '-';
             }
             // Use secure random bytes from OpenSSL
@@ -77,28 +82,34 @@ namespace {
     }
 
     // Helper function to check if invite code exists in database
-    bool InviteCodeExists(const std::string& code) {
+    bool InviteCodeExists(const std::string& code)
+    {
         QueryResult existing = PlayerbotsDatabase.Query(
             "SELECT 1 FROM playerbots_invite_codes WHERE code = '{}' AND status = 1", code);
         return existing != nullptr;
     }
 
     // Helper function to validate invite code format
-    bool IsValidInviteCodeFormat(const std::string& code) {
-        if (code.length() != INVITE_CODE_LENGTH) {
+    bool IsValidInviteCodeFormat(const std::string& code)
+    {
+        if (code.length() != INVITE_CODE_LENGTH)
+        {
             return false;
         }
 
         // Check format: XXXX-XXXX-XXXX
-        if (code[4] != '-' || code[9] != '-') {
+        if (code[4] != '-' || code[9] != '-')
+        {
             return false;
         }
 
         // Check characters (only allowed chars)
-        for (size_t i = 0; i < code.length(); ++i) {
+        for (size_t i = 0; i < code.length(); ++i)
+        {
             if (i == 4 || i == 9) continue; // Skip dashes
             char c = code[i];
-            if (!((c >= 'A' && c <= 'Z') || (c >= '2' && c <= '9')) || c == 'O' || c == 'I') {
+            if (!((c >= 'A' && c <= 'Z') || (c >= '2' && c <= '9')) || c == 'O' || c == 'I')
+            {
                 return false;
             }
         }
@@ -1845,7 +1856,8 @@ void PlayerbotMgr::HandleViewLinkedAccountsCommand(Player* player)
             "SELECT short_name, UNIX_TIMESTAMP(created_at) FROM playerbots_account_links WHERE account_id = {} ORDER BY created_at DESC",
             accountId);
 
-        if (!linkedResult) {
+        if (!linkedResult)
+        {
             handler.PSendSysMessage("No active account links.");
             return;
         }
@@ -1866,7 +1878,8 @@ void PlayerbotMgr::HandleViewLinkedAccountsCommand(Player* player)
             handler.PSendSysMessage("{} (linked: {})", shortName.c_str(), dateBuffer);
         } while (linkedResult->NextRow());
     }
-    catch (const std::exception& e) {
+    catch (const std::exception& e)
+    {
         SendGenericError(handler, "viewing linked accounts");
     }
 }
@@ -1876,7 +1889,8 @@ void PlayerbotMgr::HandleUnlinkAccountCommand(Player* player, const std::string&
     ChatHandler handler(player->GetSession());
     uint32 accountId = player->GetSession()->GetAccountId();
 
-    if (shortName.empty()) {
+    if (shortName.empty())
+    {
         handler.PSendSysMessage("Usage: .playerbots accountlink disconnect <shortName>");
         handler.PSendSysMessage("Example: disconnect \"MyFriend\"");
         return;
@@ -1884,7 +1898,8 @@ void PlayerbotMgr::HandleUnlinkAccountCommand(Player* player, const std::string&
 
     // Remove quotes if present
     std::string cleanShortName = shortName;
-    if (cleanShortName.size() >= 2 && cleanShortName.front() == '"' && cleanShortName.back() == '"') {
+    if (cleanShortName.size() >= 2 && cleanShortName.front() == '"' && cleanShortName.back() == '"')
+    {
         cleanShortName = cleanShortName.substr(1, cleanShortName.size() - 2);
     }
 
@@ -1894,7 +1909,8 @@ void PlayerbotMgr::HandleUnlinkAccountCommand(Player* player, const std::string&
             "SELECT linked_account_id FROM playerbots_account_links WHERE account_id = {} AND short_name = '{}'",
             accountId, cleanShortName);
 
-        if (!linkCheck) {
+        if (!linkCheck)
+        {
             handler.PSendSysMessage("No link exists with short name '{}'.", cleanShortName.c_str());
             handler.PSendSysMessage("Use 'activelinks' to see your current links.");
             return;
@@ -1909,7 +1925,8 @@ void PlayerbotMgr::HandleUnlinkAccountCommand(Player* player, const std::string&
 
         handler.PSendSysMessage("Account link '{}' disconnected successfully.", cleanShortName.c_str());
     }
-    catch (const std::exception& e) {
+    catch (const std::exception& e)
+    {
         SendGenericError(handler, "account unlinking");
     }
 }
@@ -1919,15 +1936,18 @@ void PlayerbotMgr::HandleGenerateInviteCommand(Player* player)
     ChatHandler handler(player->GetSession());
     uint32 accountId = player->GetSession()->GetAccountId();
 
-    try {
+    try
+    {
         // Check how many active invite codes this account has
         QueryResult activeCodesResult = PlayerbotsDatabase.Query(
             "SELECT COUNT(*) FROM playerbots_invite_codes WHERE account_id = {} AND expires_at > {} AND status = 1",
             accountId, GetCurrentTimestamp());
 
-        if (activeCodesResult) {
+        if (activeCodesResult)
+        {
             uint32 activeCount = activeCodesResult->Fetch()[0].Get<uint32>();
-            if (activeCount >= MAX_INVITE_CODES_PER_ACCOUNT) {
+            if (activeCount >= MAX_INVITE_CODES_PER_ACCOUNT)
+            {
                 handler.PSendSysMessage("You have reached the maximum number of active invite codes ({}). Revoke some codes first.", MAX_INVITE_CODES_PER_ACCOUNT);
                 return;
             }
@@ -1943,7 +1963,8 @@ void PlayerbotMgr::HandleGenerateInviteCommand(Player* player)
             attempts++;
         } while (InviteCodeExists(inviteCode) && attempts < maxAttempts);
 
-        if (attempts >= maxAttempts) {
+        if (attempts >= maxAttempts)
+        {
             LOG_ERROR("playerbots", "Failed to generate unique invite code after {} attempts", maxAttempts);
             handler.PSendSysMessage("Failed to generate unique invite code after {} attempts. Please try again.", maxAttempts);
             return;
@@ -1961,7 +1982,8 @@ void PlayerbotMgr::HandleGenerateInviteCommand(Player* player)
         handler.PSendSysMessage("Share this code with trusted players to allow them to link to your account.");
         handler.PSendSysMessage("They can use: |cFFFFFFFF.playerbots accountlink connect {} \"FriendlyName\"|r", inviteCode.c_str());
     }
-    catch (const std::exception& e) {
+    catch (const std::exception& e)
+    {
         SendGenericError(handler, "invite code generation");
     }
 }
@@ -1978,29 +2000,34 @@ void PlayerbotMgr::HandleLinkWithInviteCommand(Player* player, const std::string
 
     // Get remaining args as shortName (handles quoted names)
     std::getline(iss, shortName);
-    if (!shortName.empty() && shortName[0] == ' ') {
+    if (!shortName.empty() && shortName[0] == ' ')
+    {
         shortName = shortName.substr(1); // Remove leading space
     }
 
     // Remove quotes if present
-    if (shortName.size() >= 2 && shortName.front() == '"' && shortName.back() == '"') {
+    if (shortName.size() >= 2 && shortName.front() == '"' && shortName.back() == '"')
+    {
         shortName = shortName.substr(1, shortName.size() - 2);
     }
 
-    if (inviteCode.empty() || shortName.empty()) {
+    if (inviteCode.empty() || shortName.empty())
+    {
         handler.PSendSysMessage("Usage: connect <inviteCode> <shortName>");
         handler.PSendSysMessage("Example: connect AB3X-9K2L-PQ8M \"MyFriend\"");
         return;
     }
 
     // Validate shortName
-    if (shortName.length() > 32) {
+    if (shortName.length() > 32)
+    {
         handler.PSendSysMessage("Short name must be 32 characters or less.");
         return;
     }
 
     // Validate invite code format
-    if (!IsValidInviteCodeFormat(inviteCode)) {
+    if (!IsValidInviteCodeFormat(inviteCode))
+    {
         handler.PSendSysMessage("Invalid invite code format.");
         return;
     }
@@ -2011,7 +2038,8 @@ void PlayerbotMgr::HandleLinkWithInviteCommand(Player* player, const std::string
             "SELECT account_id, created_at, expires_at FROM playerbots_invite_codes WHERE code = '{}' AND status = 1 AND expires_at > {}",
             inviteCode, GetCurrentTimestamp());
 
-        if (!inviteResult) {
+        if (!inviteResult)
+        {
             handler.PSendSysMessage("Invalid or expired invite code.");
             return;
         }
@@ -2020,7 +2048,8 @@ void PlayerbotMgr::HandleLinkWithInviteCommand(Player* player, const std::string
         uint32 targetAccountId = inviteFields[0].Get<uint32>();
 
         // Prevent self-linking
-        if (requestingAccountId == targetAccountId) {
+        if (requestingAccountId == targetAccountId)
+        {
             handler.PSendSysMessage("You cannot link to your own account.");
             return;
         }
@@ -2029,7 +2058,8 @@ void PlayerbotMgr::HandleLinkWithInviteCommand(Player* player, const std::string
         QueryResult existingLink = PlayerbotsDatabase.Query(
             "SELECT 1 FROM playerbots_account_links WHERE account_id = {} AND linked_account_id = {}",
             requestingAccountId, targetAccountId);
-        if (existingLink) {
+        if (existingLink)
+        {
             handler.PSendSysMessage("Accounts are already linked.");
             return;
         }
@@ -2045,7 +2075,8 @@ void PlayerbotMgr::HandleLinkWithInviteCommand(Player* player, const std::string
             targetAccountId, requestingAccountId, shortName);
             handler.PSendSysMessage("Accounts linked successfully as '{}'! You can now manage each other's player bots.", shortName.c_str());
     }
-    catch (const std::exception& e) {
+    catch (const std::exception& e)
+    {
         SendGenericError(handler, "invite code linking");
     }
 }
@@ -2062,7 +2093,8 @@ void PlayerbotMgr::HandleViewInviteCodesCommand(Player* player)
             "ORDER BY created_at DESC",
             accountId, GetCurrentTimestamp());
 
-        if (!activeCodesResult) {
+        if (!activeCodesResult)
+        {
             handler.PSendSysMessage("No active invite codes found. Use '.playerbots accountlink generate' to create one.");
             return;
         }
@@ -2078,7 +2110,8 @@ void PlayerbotMgr::HandleViewInviteCodesCommand(Player* player)
         } while (activeCodesResult->NextRow());
 
     }
-    catch (const std::exception& e) {
+    catch (const std::exception& e)
+    {
         SendGenericError(handler, "viewing invite codes");
     }
 }
@@ -2088,7 +2121,8 @@ void PlayerbotMgr::HandleRevokeInviteCommand(Player* player, const std::string& 
     ChatHandler handler(player->GetSession());
     uint32 accountId = player->GetSession()->GetAccountId();
 
-    if (inviteCode.empty()) {
+    if (inviteCode.empty())
+    {
         handler.PSendSysMessage("Usage: .playerbots accountlink remove <inviteCode>");
         return;
     }
@@ -2099,7 +2133,8 @@ void PlayerbotMgr::HandleRevokeInviteCommand(Player* player, const std::string& 
             "SELECT 1 FROM playerbots_invite_codes WHERE account_id = {} AND code = '{}' AND status = 1",
             accountId, inviteCode);
 
-        if (!codeResult) {
+        if (!codeResult)
+        {
             handler.PSendSysMessage("Invite code not found or already used/revoked.");
             return;
         }
@@ -2111,14 +2146,16 @@ void PlayerbotMgr::HandleRevokeInviteCommand(Player* player, const std::string& 
 
         handler.PSendSysMessage("Invite code |cFFFFFF00{}|r has been revoked.", inviteCode.c_str());
     }
-    catch (const std::exception& e) {
+    catch (const std::exception& e)
+    {
         SendGenericError(handler, "invite code revocation");
     }
 }
 
 bool PlayerbotMgr::HandleConsoleCommand(ChatHandler* handler, char const* args)
 {
-    if (!args || !*args) {
+    if (!args || !*args)
+    {
         handler->PSendSysMessage("Account link commands:");
         handler->PSendSysMessage("  Invite System: generate, connect, codes, remove");
         handler->PSendSysMessage("  Account Management: activelinks, disconnect");
@@ -2131,36 +2168,43 @@ bool PlayerbotMgr::HandleConsoleCommand(ChatHandler* handler, char const* args)
 
     std::string remainingArgs;
     std::getline(iss, remainingArgs);
-    if (!remainingArgs.empty() && remainingArgs[0] == ' ') {
+    if (!remainingArgs.empty() && remainingArgs[0] == ' ')
+    {
         remainingArgs = remainingArgs.substr(1); // Remove leading space
     }
 
     WorldSession* session = handler->GetSession();
-    if (!session) {
+    if (!session)
+    {
         handler->PSendSysMessage("Console commands not supported for this operation.");
         return false;
     }
 
     Player* player = session->GetPlayer();
-    if (!player) {
+    if (!player)
+    {
         handler->PSendSysMessage("Player not found.");
         return false;
     }
 
     PlayerbotMgr* mgr = sPlayerbotsMgr->GetPlayerbotMgr(player);
-    if (!mgr) {
+    if (!mgr)
+    {
         handler->PSendSysMessage("PlayerbotMgr instance not found.");
         return false;
     }
 
     try {
         // Invite code system commands
-        if (command == "generate") {
+        if (command == "generate")
+        {
             mgr->HandleGenerateInviteCommand(player);
             return true;
         }
-        else if (command == "connect") {
-            if (remainingArgs.empty()) {
+        else if (command == "connect")
+        {
+            if (remainingArgs.empty())
+            {
                 handler->PSendSysMessage("Usage: connect <inviteCode> <shortName>");
                 handler->PSendSysMessage("Example: connect AB3X-9K2L-PQ8M \"MyFriend\"");
                 return false;
@@ -2168,12 +2212,15 @@ bool PlayerbotMgr::HandleConsoleCommand(ChatHandler* handler, char const* args)
             mgr->HandleLinkWithInviteCommand(player, remainingArgs);
             return true;
         }
-        else if (command == "codes") {
+        else if (command == "codes")
+        {
             mgr->HandleViewInviteCodesCommand(player);
             return true;
         }
-        else if (command == "remove") {
-            if (remainingArgs.empty()) {
+        else if (command == "remove")
+        {
+            if (remainingArgs.empty())
+            {
                 handler->PSendSysMessage("Usage: remove <inviteCode>");
                 return false;
             }
@@ -2181,12 +2228,15 @@ bool PlayerbotMgr::HandleConsoleCommand(ChatHandler* handler, char const* args)
             return true;
         }
         // Account management commands
-        else if (command == "activelinks") {
+        else if (command == "activelinks")
+        {
             mgr->HandleViewLinkedAccountsCommand(player);
             return true;
         }
-        else if (command == "disconnect") {
-            if (remainingArgs.empty()) {
+        else if (command == "disconnect")
+        {
+            if (remainingArgs.empty())
+            {
                 handler->PSendSysMessage("Usage: disconnect <shortName>");
                 handler->PSendSysMessage("Example: disconnect \"MyFriend\"");
                 return false;
@@ -2194,14 +2244,16 @@ bool PlayerbotMgr::HandleConsoleCommand(ChatHandler* handler, char const* args)
             mgr->HandleUnlinkAccountCommand(player, remainingArgs);
             return true;
         }
-        else {
+        else
+        {
             handler->PSendSysMessage("Unknown command '{}'. Available commands:", command.c_str());
             handler->PSendSysMessage("  Invite System: generate, connect, codes, remove");
             handler->PSendSysMessage("  Account Management: activelinks, disconnect");
             return false;
         }
     }
-    catch (const std::exception& e) {
+    catch (const std::exception& e)
+    {
         handler->PSendSysMessage("An error occurred processing the command.");
         return false;
     }
