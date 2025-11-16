@@ -1878,7 +1878,7 @@ void PlayerbotMgr::HandleViewLinkedAccountsCommand(Player* player)
             handler.PSendSysMessage("{} (linked: {})", shortName.c_str(), dateBuffer);
         } while (linkedResult->NextRow());
     }
-    catch (const std::exception& e)
+    catch (const std::exception&)
     {
         SendGenericError(handler, "viewing linked accounts");
     }
@@ -1925,7 +1925,7 @@ void PlayerbotMgr::HandleUnlinkAccountCommand(Player* player, const std::string&
 
         handler.PSendSysMessage("Account link '{}' disconnected successfully.", cleanShortName.c_str());
     }
-    catch (const std::exception& e)
+    catch (const std::exception&)
     {
         SendGenericError(handler, "account unlinking");
     }
@@ -1982,7 +1982,7 @@ void PlayerbotMgr::HandleGenerateInviteCommand(Player* player)
         handler.PSendSysMessage("Share this code with trusted players to allow them to link to your account.");
         handler.PSendSysMessage("They can use: |cFFFFFFFF.playerbots accountlink connect {} \"FriendlyName\"|r", inviteCode.c_str());
     }
-    catch (const std::exception& e)
+    catch (const std::exception&)
     {
         SendGenericError(handler, "invite code generation");
     }
@@ -2075,7 +2075,7 @@ void PlayerbotMgr::HandleLinkWithInviteCommand(Player* player, const std::string
             targetAccountId, requestingAccountId, shortName);
             handler.PSendSysMessage("Accounts linked successfully as '{}'! You can now manage each other's player bots.", shortName.c_str());
     }
-    catch (const std::exception& e)
+    catch (const std::exception&)
     {
         SendGenericError(handler, "invite code linking");
     }
@@ -2110,7 +2110,7 @@ void PlayerbotMgr::HandleViewInviteCodesCommand(Player* player)
         } while (activeCodesResult->NextRow());
 
     }
-    catch (const std::exception& e)
+    catch (const std::exception&)
     {
         SendGenericError(handler, "viewing invite codes");
     }
@@ -2146,7 +2146,7 @@ void PlayerbotMgr::HandleRevokeInviteCommand(Player* player, const std::string& 
 
         handler.PSendSysMessage("Invite code |cFFFFFF00{}|r has been revoked.", inviteCode.c_str());
     }
-    catch (const std::exception& e)
+    catch (const std::exception&)
     {
         SendGenericError(handler, "invite code revocation");
     }
@@ -2252,7 +2252,7 @@ bool PlayerbotMgr::HandleConsoleCommand(ChatHandler* handler, char const* args)
             return false;
         }
     }
-    catch (const std::exception& e)
+    catch (const std::exception&)
     {
         handler->PSendSysMessage("An error occurred processing the command.");
         return false;
