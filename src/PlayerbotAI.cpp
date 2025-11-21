@@ -14,6 +14,7 @@
 #include "BudgetValues.h"
 #include "ChannelMgr.h"
 #include "CharacterPackets.h"
+#include "ChatHelper.h"
 #include "Common.h"
 #include "CreatureAIImpl.h"
 #include "CreatureData.h"
@@ -106,14 +107,14 @@ void PacketHandlingHelper::AddPacket(WorldPacket const& packet)
 PlayerbotAI::PlayerbotAI()
     : PlayerbotAIBase(true),
       bot(nullptr),
+      master(nullptr),
+      accountId(0),
       aiObjectContext(nullptr),
       currentEngine(nullptr),
+      currentState(BOT_STATE_NON_COMBAT),
       chatHelper(this),
       chatFilter(this),
-      accountId(0),
-      security(nullptr),
-      master(nullptr),
-      currentState(BOT_STATE_NON_COMBAT)
+      security(nullptr)
 {
     for (uint8 i = 0; i < BOT_STATE_MAX; i++)
         engines[i] = nullptr;
@@ -128,9 +129,9 @@ PlayerbotAI::PlayerbotAI()
 PlayerbotAI::PlayerbotAI(Player* bot)
     : PlayerbotAIBase(true),
       bot(bot),
+      master(nullptr),
       chatHelper(this),
       chatFilter(this),
-      master(nullptr),
       security(bot)  // reorder args - whipowill
 {
     if (!bot->isTaxiCheater() && HasCheat((BotCheatMask::taxi)))
@@ -283,6 +284,15 @@ void PlayerbotAI::UpdateAI(uint32 elapsed, bool minimal)
                 return;
             }
 
+            GameObject* goSpellTarget = currentSpell->m_targets.GetGOTarget();
+
+            if (goSpellTarget && !goSpellTarget->isSpawned())
+            {
+                InterruptSpell();
+                YieldThread(GetReactDelay());
+                return;
+            }
+
             bool isHeal = false;
             bool isSingleTarget = true;
 
@@ -367,11 +377,19 @@ void PlayerbotAI::UpdateAIGroupAndMaster()
 {
     if (!bot)
         return;
+
+    PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
+    if (!botAI)
+        return;
+
     Group* group = bot->GetGroup();
+
+    bool IsRandomBot = sRandomPlayerbotMgr->IsRandomBot(bot);
+
     // If bot is not in group verify that for is RandomBot before clearing  master and resetting.
     if (!group)
     {
-        if (master && sRandomPlayerbotMgr->IsRandomBot(bot))
+        if (master && IsRandomBot)
         {
             SetMaster(nullptr);
             Reset(true);
@@ -380,12 +398,10 @@ void PlayerbotAI::UpdateAIGroupAndMaster()
         return;
     }
 
-    if (bot->InBattleground() && bot->GetBattleground()->GetBgTypeID() != BATTLEGROUND_AV)
-        return;
-
-    PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
-    if (!botAI)
-        return;
+    // Bot in BG, but master no longer part of a group: release master
+    // Exclude alt and addclass bots as they rely on current (real player) master, security-wise.
+    if (bot->InBattleground() && IsRandomBot && master && !master->GetGroup())
+        SetMaster(nullptr);
 
     PlayerbotAI* masterBotAI = nullptr;
     if (master)
@@ -1795,11 +1811,11 @@ int32 PlayerbotAI::GetAssistTankIndex(Player* player)
     {
         return -1;
     }
+
     int counter = 0;
     for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
     {
         Player* member = ref->GetSource();
-
         if (!member)
         {
             continue;
@@ -1809,11 +1825,13 @@ int32 PlayerbotAI::GetAssistTankIndex(Player* player)
         {
             return counter;
         }
+
         if (IsTank(member, true) && group->IsAssistant(member->GetGUID()))
         {
             counter++;
         }
     }
+
     return 0;
 }
 
@@ -2126,14 +2144,15 @@ bool PlayerbotAI::IsMainTank(Player* player)
             break;
         }
     }
+
     if (mainTank != ObjectGuid::Empty)
     {
         return player->GetGUID() == mainTank;
     }
+
     for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
     {
         Player* member = ref->GetSource();
-
         if (!member)
         {
             continue;
@@ -2144,6 +2163,7 @@ bool PlayerbotAI::IsMainTank(Player* player)
             return player->GetGUID() == member->GetGUID();
         }
     }
+
     return false;
 }
 
@@ -2165,8 +2185,7 @@ bool PlayerbotAI::IsBotMainTank(Player* player)
         return true;  // If no group, consider the bot as main tank
     }
 
-    uint32 botAssistTankIndex = GetAssistTankIndex(player);
-
+    int32 botAssistTankIndex = GetAssistTankIndex(player);
     if (botAssistTankIndex == -1)
     {
         return false;
@@ -2180,8 +2199,7 @@ bool PlayerbotAI::IsBotMainTank(Player* player)
             continue;
         }
 
-        uint32 memberAssistTankIndex = GetAssistTankIndex(member);
-
+        int32 memberAssistTankIndex = GetAssistTankIndex(member);
         if (memberAssistTankIndex == -1)
         {
             continue;

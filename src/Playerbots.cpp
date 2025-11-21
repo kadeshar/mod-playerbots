@@ -26,6 +26,7 @@
 #include "PlayerScript.h"
 #include "PlayerbotAIConfig.h"
 #include "PlayerbotMgr.h"
+#include "PlayerbotWorldThreadProcessor.h"
 #include "RandomPlayerbotMgr.h"
 #include "ScriptMgr.h"
 #include "cs_playerbots.h"
@@ -301,7 +302,8 @@ class PlayerbotsWorldScript : public WorldScript
 {
 public:
     PlayerbotsWorldScript() : WorldScript("PlayerbotsWorldScript", {
-        WORLDHOOK_ON_BEFORE_WORLD_INITIALIZED
+        WORLDHOOK_ON_BEFORE_WORLD_INITIALIZED,
+        WORLDHOOK_ON_UPDATE
     }) {}
 
     void OnBeforeWorldInitialized() override
@@ -335,6 +337,13 @@ public:
         LOG_INFO("server.loading", ">> Cleaned up expired invite codes");
 
         LOG_INFO("server.loading", " ");
+        LOG_INFO("server.loading", "Playerbots World Thread Processor initialized");
+    }
+
+    void OnUpdate(uint32 diff) override
+    {
+        sPlayerbotWorldProcessor->Update(diff);
+        sRandomPlayerbotMgr->UpdateAI(diff);  // World thread only
     }
 };
 
@@ -396,8 +405,7 @@ public:
 
     void OnPlayerbotUpdate(uint32 diff) override
     {
-        sRandomPlayerbotMgr->UpdateAI(diff);
-        sRandomPlayerbotMgr->UpdateSessions();
+        sRandomPlayerbotMgr->UpdateSessions();  // Per-bot updates only
     }
 
     void OnPlayerbotUpdateSessions(Player* player) override
