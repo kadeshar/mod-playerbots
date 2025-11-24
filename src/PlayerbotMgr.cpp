@@ -32,6 +32,7 @@
 #include "Playerbots.h"
 #include "PlayerbotsStatements.h"
 #include "RandomPlayerbotMgr.h"
+#include "Helpers.h"
 #include "SharedDefines.h"
 #include "WorldSession.h"
 #include "BroadcastHelper.h"
