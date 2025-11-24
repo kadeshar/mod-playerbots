@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <string>
 
 #include <algorithm>
 #include <cctype>
@@ -18,6 +19,11 @@
 #include <vector>
 
 #include "Common.h"
+
+// Trimming helpers (implemented in Helpers.cpp)
+std::string& ltrim(std::string& s);
+std::string& rtrim(std::string& s);
+std::string& trim(std::string& s);
 
 void split(std::vector<std::string>& dest, std::string const str, char const* delim)
 {
