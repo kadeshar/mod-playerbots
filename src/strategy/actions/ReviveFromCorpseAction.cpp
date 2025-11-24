@@ -169,6 +169,7 @@ bool FindCorpseAction::Execute(Event event)
         if (deadTime > delay)
         {
             bot->GetMotionMaster()->Clear();
+            bot->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TELEPORTED | AURA_INTERRUPT_FLAG_CHANGE_MAP);
             bot->TeleportTo(moveToPos.getMapId(), moveToPos.getX(), moveToPos.getY(), moveToPos.getZ(), 0);
         }
 
@@ -313,7 +314,7 @@ bool SpiritHealerAction::Execute(Event event)
         for (GuidVector::iterator i = npcs.begin(); i != npcs.end(); i++)
         {
             Unit* unit = botAI->GetUnit(*i);
-            if (unit && unit->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_SPIRITHEALER))
+            if (unit && unit->HasNpcFlag(UNIT_NPC_FLAG_SPIRITHEALER))
             {
                 LOG_DEBUG("playerbots", "Bot {} {}:{} <{}> revives at spirit healer", bot->GetGUID().ToString().c_str(),
                           bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(), bot->GetName());
@@ -350,6 +351,7 @@ bool SpiritHealerAction::Execute(Event event)
     // if (!botAI->HasActivePlayerMaster())
     // {
     context->GetValue<uint32>("death count")->Set(dCount + 1);
+    bot->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TELEPORTED | AURA_INTERRUPT_FLAG_CHANGE_MAP);
     return bot->TeleportTo(ClosestGrave->Map, ClosestGrave->x, ClosestGrave->y, ClosestGrave->z, 0.f);
     // }
 

@@ -144,6 +144,8 @@ class CastStarfallAction : public CastSpellAction
 {
 public:
     CastStarfallAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "starfall") {}
+
+    bool isUseful() override;
 };
 
 class CastHurricaneAction : public CastSpellAction
@@ -310,7 +312,6 @@ class CastEnrageAction : public CastBuffSpellAction
 public:
     CastEnrageAction(PlayerbotAI* ai) : CastBuffSpellAction(ai, "enrage") {}
 };
-
 
 class CastRejuvenationOnNotFullAction : public HealPartyMemberAction
 {

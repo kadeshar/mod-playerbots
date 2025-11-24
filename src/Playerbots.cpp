@@ -25,6 +25,7 @@
 #include "Metric.h"
 #include "PlayerScript.h"
 #include "PlayerbotAIConfig.h"
+#include "PlayerbotWorldThreadProcessor.h"
 #include "RandomPlayerbotMgr.h"
 #include "ScriptMgr.h"
 #include "cs_playerbots.h"
@@ -81,14 +82,14 @@ public:
     PlayerbotsPlayerScript() : PlayerScript("PlayerbotsPlayerScript", {
         PLAYERHOOK_ON_LOGIN,
         PLAYERHOOK_ON_AFTER_UPDATE,
-        PLAYERHOOK_ON_CHAT,
-        PLAYERHOOK_ON_CHAT_WITH_CHANNEL,
-        PLAYERHOOK_ON_CHAT_WITH_GROUP,
         PLAYERHOOK_ON_BEFORE_CRITERIA_PROGRESS,
         PLAYERHOOK_ON_BEFORE_ACHI_COMPLETE,
         PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT,
+        PLAYERHOOK_CAN_PLAYER_USE_GROUP_CHAT,
+        PLAYERHOOK_CAN_PLAYER_USE_GUILD_CHAT,
+        PLAYERHOOK_CAN_PLAYER_USE_CHANNEL_CHAT,
         PLAYERHOOK_ON_GIVE_EXP,
-        PLAYERHOOK_ON_LEVEL_CHANGED
+        PLAYERHOOK_ON_BEFORE_TELEPORT
     }) {}
 
     void OnPlayerLogin(Player* player) override
@@ -106,7 +107,7 @@ public:
             {
                 ChatHandler(player->GetSession()).SendSysMessage(
                     "|cff00ff00This server runs with |cff00ccffmod-playerbots|r "
-                    "|cffcccccchttps://github.com/liyunfan1223/mod-playerbots|r");
+                    "|cffcccccchttps://github.com/mod-playerbots/mod-playerbots|r");
             }
 
             if (sPlayerbotAIConfig->enabled || sPlayerbotAIConfig->randomBotAutologin)
@@ -122,31 +123,24 @@ public:
         }
     }
 
-    void OnPlayerLevelChanged(Player* player, uint8 oldLevel) override
+    bool OnPlayerBeforeTeleport(Player* player, uint32 mapid, float /*x*/, float /*y*/, float /*z*/, float /*orientation*/, uint32 /*options*/, Unit* /*target*/) override
     {
-        // Check if feature is enabled and required objects are valid
-        if (!sPlayerbotAIConfig || !sPlayerbotAIConfig->randomBotLogoutOutsideLoginRange || !sRandomPlayerbotMgr)
-            return;
+        // Only apply to bots to prevent affecting real players
+        if (!player || !player->GetSession()->IsBot())
+            return true;
 
-        // Only apply to bots from rndBotTypeAccounts (type 1)
-        uint32 accountId = player->GetSession()->GetAccountId();
-        if (!sRandomPlayerbotMgr->IsAccountType(accountId, 1))
-            return;
-
-        uint32 newLevel = player->GetLevel();
-
-        // Check if the new level is outside the allowed login range
-        if (newLevel < sPlayerbotAIConfig->randomBotMinLoginLevel ||
-            newLevel > sPlayerbotAIConfig->randomBotMaxLoginLevel)
+        // If changing maps, proactively clean visibility references to prevent
+        // stale pointers in other players' visibility maps during the teleport.
+        // This fixes a race condition where:
+        // 1. Bot A teleports and its visible objects start getting cleaned up
+        // 2. Bot B is simultaneously updating visibility and tries to access objects in Bot A's old visibility map
+        // 3. Those objects may already be freed, causing a segmentation fault
+        if (player->GetMapId() != mapid && player->IsInWorld())
         {
-            LOG_INFO("playerbots", "Bot {} changed levels from {} to {}, outside login range ({}-{}). Marking for logout",
-                    player->GetName(), oldLevel, newLevel,
-                    sPlayerbotAIConfig->randomBotMinLoginLevel, sPlayerbotAIConfig->randomBotMaxLoginLevel);
-
-            // Mark the bot for removal in the next update cycle
-            sRandomPlayerbotMgr->MarkBotForLogout(player->GetGUID().GetCounter());
-            sRandomPlayerbotMgr->ForceRecount();
+            player->GetObjectVisibilityContainer().CleanVisibilityReferences();
         }
+
+        return true;  // Allow teleport to continue
     }
 
     void OnPlayerAfterUpdate(Player* player, uint32 diff) override
@@ -169,15 +163,12 @@ public:
             if (PlayerbotAI* botAI = GET_PLAYERBOT_AI(receiver))
             {
                 botAI->HandleCommand(type, msg, player);
-
-                return false;
             }
         }
-
         return true;
     }
 
-    void OnPlayerChat(Player* player, uint32 type, uint32 /*lang*/, std::string& msg, Group* group) override
+    bool OnPlayerCanUseChat(Player* player, uint32 type, uint32 /*lang*/, std::string& msg, Group* group) override
     {
         for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
         {
@@ -189,9 +180,10 @@ public:
                 }
             }
         }
+        return true;
     }
 
-    void OnPlayerChat(Player* player, uint32 type, uint32 /*lang*/, std::string& msg) override
+    bool OnPlayerCanUseChat(Player* player, uint32 type, uint32 /*lang*/, std::string& msg, Guild* guild) override
     {
         if (type == CHAT_MSG_GUILD)
         {
@@ -210,9 +202,10 @@ public:
                 }
             }
         }
+        return true;
     }
 
-    void OnPlayerChat(Player* player, uint32 type, uint32 /*lang*/, std::string& msg, Channel* channel) override
+    bool OnPlayerCanUseChat(Player* player, uint32 type, uint32 /*lang*/, std::string& msg, Channel* channel) override
     {
         if (PlayerbotMgr* playerbotMgr = GET_PLAYERBOT_MGR(player))
         {
@@ -223,11 +216,13 @@ public:
         }
 
         sRandomPlayerbotMgr->HandleCommand(type, msg, player);
+        return true;
     }
 
     bool OnPlayerBeforeAchievementComplete(Player* player, AchievementEntry const* achievement) override
     {
-        if (sRandomPlayerbotMgr->IsRandomBot(player) && (achievement->flags == 256 || achievement->flags == 768))
+        if ((sRandomPlayerbotMgr->IsRandomBot(player) || sRandomPlayerbotMgr->IsAddclassBot(player)) &&
+            (achievement->flags & (ACHIEVEMENT_FLAG_REALM_FIRST_REACH | ACHIEVEMENT_FLAG_REALM_FIRST_KILL)))
         {
             return false;
         }
@@ -306,7 +301,8 @@ class PlayerbotsWorldScript : public WorldScript
 {
 public:
     PlayerbotsWorldScript() : WorldScript("PlayerbotsWorldScript", {
-        WORLDHOOK_ON_BEFORE_WORLD_INITIALIZED
+        WORLDHOOK_ON_BEFORE_WORLD_INITIALIZED,
+        WORLDHOOK_ON_UPDATE
     }) {}
 
     void OnBeforeWorldInitialized() override
@@ -323,7 +319,7 @@ public:
         LOG_INFO("server.loading", "║     mod-playerbots is a community-driven open-source     ║");
         LOG_INFO("server.loading", "║  project based on AzerothCore, licensed under AGPLv3.0   ║");
         LOG_INFO("server.loading", "╟──────────────────────────────────────────────────────────╢");
-        LOG_INFO("server.loading", "║      https://github.com/liyunfan1223/mod-playerbots      ║");
+        LOG_INFO("server.loading", "║      https://github.com/mod-playerbots/mod-playerbots    ║");
         LOG_INFO("server.loading", "╚══════════════════════════════════════════════════════════╝");
 
         uint32 oldMSTime = getMSTime();
@@ -335,6 +331,13 @@ public:
 
         LOG_INFO("server.loading", ">> Loaded playerbots config in {} ms", GetMSTimeDiffToNow(oldMSTime));
         LOG_INFO("server.loading", " ");
+        LOG_INFO("server.loading", "Playerbots World Thread Processor initialized");
+    }
+
+    void OnUpdate(uint32 diff) override
+    {
+        sPlayerbotWorldProcessor->Update(diff);
+        sRandomPlayerbotMgr->UpdateAI(diff);  // World thread only
     }
 };
 
@@ -396,8 +399,7 @@ public:
 
     void OnPlayerbotUpdate(uint32 diff) override
     {
-        sRandomPlayerbotMgr->UpdateAI(diff);
-        sRandomPlayerbotMgr->UpdateSessions();
+        sRandomPlayerbotMgr->UpdateSessions();  // Per-bot updates only
     }
 
     void OnPlayerbotUpdateSessions(Player* player) override

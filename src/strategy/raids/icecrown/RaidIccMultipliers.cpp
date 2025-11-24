@@ -51,7 +51,7 @@ float IccLadyDeathwhisperMultiplier::GetValue(Action* action)
     if (dynamic_cast<IccShadeLadyDeathwhisperAction*>(action))
         return 1.0f;
 
-    for (const auto& npcGuid : npcs)
+    for (auto const& npcGuid : npcs)
     {
         Unit* shade = botAI->GetUnit(npcGuid);
 
@@ -155,7 +155,6 @@ float IccFestergutMultiplier::GetValue(Action* action)
 
     if (bot->HasAura(SPELL_GAS_SPORE))
         return 0.0f;
-
 
     return 1.0f;
 }
@@ -375,7 +374,7 @@ float IccBpcAssistMultiplier::GetValue(Action* action)
 
     for (const auto entry : bombEntries)
     {
-        for (const auto& guid : bombs)
+        for (auto const& guid : bombs)
         {
             if (Unit* unit = botAI->GetUnit(guid))
             {
@@ -472,7 +471,6 @@ float IccBqlMultiplier::GetValue(Action* action)
         else
             return 0.0f;  // Cancel all other actions when we need to handle Swarming Shadows
     }
-    return 1.0f;
 
     if ((boss->GetExactDist2d(ICC_BQL_TANK_POSITION.GetPositionX(), ICC_BQL_TANK_POSITION.GetPositionY()) > 10.0f) &&
         botAI->IsRanged(bot) && !((boss->GetPositionZ() - bot->GetPositionZ()) > 5.0f))
@@ -481,6 +479,7 @@ float IccBqlMultiplier::GetValue(Action* action)
             return 0.0f;
     }
 
+    return 1.0f;
 }
 
 //VDW
@@ -490,7 +489,6 @@ float IccValithriaDreamCloudMultiplier::GetValue(Action* action)
 
     Aura* twistedNightmares = botAI->GetAura("Twisted Nightmares", bot);
     Aura* emeraldVigor = botAI->GetAura("Emerald Vigor", bot);
-
 
     if (!boss && !bot->HasAura(SPELL_DREAM_STATE))
         return 1.0f;

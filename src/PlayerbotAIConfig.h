@@ -132,7 +132,7 @@ public:
     uint32 minRandomBotChangeStrategyTime, maxRandomBotChangeStrategyTime;
     uint32 minRandomBotReviveTime, maxRandomBotReviveTime;
     uint32 minRandomBotTeleportInterval, maxRandomBotTeleportInterval;
-    uint32 permanantlyInWorldTime;
+    uint32 permanentlyInWorldTime;
     uint32 minRandomBotPvpTime, maxRandomBotPvpTime;
     uint32 randomBotsPerInterval;
     uint32 minRandomBotsPriceChangeInterval, maxRandomBotsPriceChangeInterval;
@@ -247,8 +247,6 @@ public:
     std::string randomBotCombatStrategies, randomBotNonCombatStrategies;
     bool applyInstanceStrategies;
     uint32 randomBotMinLevel, randomBotMaxLevel;
-    uint32 randomBotMinLoginLevel, randomBotMaxLoginLevel;
-    bool randomBotLogoutOutsideLoginRange;
     float randomChangeMultiplier;
 
     // std::string premadeLevelSpec[MAX_CLASSES][10][91]; //lvl 10 - 100
