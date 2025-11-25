@@ -6,6 +6,7 @@
 #include "ListSpellsAction.h"
 
 #include "Event.h"
+#include "Helpers.h"
 #include "Playerbots.h"
 
 std::map<uint32, SkillLineAbilityEntry const*> ListSpellsAction::skillSpells;

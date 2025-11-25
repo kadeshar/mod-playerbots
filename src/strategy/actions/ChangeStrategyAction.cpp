@@ -6,6 +6,7 @@
 #include "ChangeStrategyAction.h"
 
 #include "Event.h"
+#include "Helpers.h"
 #include "PlayerbotDbStore.h"
 #include "Playerbots.h"
 
