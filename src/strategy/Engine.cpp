@@ -7,6 +7,7 @@
 
 #include "Action.h"
 #include "Event.h"
+#include "Helpers.h"
 #include "PerformanceMonitor.h"
 #include "Playerbots.h"
 #include "Queue.h"
