@@ -25,6 +25,7 @@
 #include "Metric.h"
 #include "PlayerScript.h"
 #include "PlayerbotAIConfig.h"
+#include "PlayerbotSpellCache.h"
 #include "PlayerbotWorldThreadProcessor.h"
 #include "RandomPlayerbotMgr.h"
 #include "ScriptMgr.h"
@@ -163,6 +164,12 @@ public:
             if (PlayerbotAI* botAI = GET_PLAYERBOT_AI(receiver))
             {
                 botAI->HandleCommand(type, msg, player);
+
+                // hotfix; otherwise the server will crash when whispering logout
+                // https://github.com/mod-playerbots/mod-playerbots/pull/1838
+                // TODO: find the root cause and solve it. (does not happen in party chat)
+                if (msg == "logout")
+                    return false;
             }
         }
         return true;
@@ -232,33 +239,46 @@ public:
 
     void OnPlayerGiveXP(Player* player, uint32& amount, Unit* /*victim*/, uint8 /*xpSource*/) override
     {
-        // early return
-        if (sPlayerbotAIConfig->randomBotXPRate == 1.0 || !player)
+        if (!player || !player->IsInWorld())
             return;
 
-        // no XP multiplier, when player is no bot.
-        if (!player->GetSession()->IsBot() || !sRandomPlayerbotMgr->IsRandomBot(player))
+        if (WorldSession* session = player->GetSession(); !session || !session->IsBot())
             return;
 
-        // no XP multiplier, when bot is in a group with a real player.
+        PlayerbotAI* botAI = GET_PLAYERBOT_AI(player);
+        if (!botAI)
+            return;
+
+        // No XP gain if master is a real player with XP gain disabled
+        if (const Player* master = botAI->GetMaster())
+        {
+            if (WorldSession* masterSession = master->GetSession();
+                masterSession && !masterSession->IsBot() &&
+                master->HasPlayerFlag(PLAYER_FLAGS_NO_XP_GAIN))
+            {
+                amount = 0; // disable XP multiplier
+                return;
+            }
+        }
+
+        // From here on we only care about random bots
+        if (sPlayerbotAIConfig->randomBotXPRate == 1.0f || !sRandomPlayerbotMgr->IsRandomBot(player))
+            return;
+
+        // No XP multiplier if bot is in a group with at least one real player
         if (Group* group = player->GetGroup())
         {
             for (GroupReference* gref = group->GetFirstMember(); gref; gref = gref->next())
             {
-                Player* member = gref->GetSource();
-                if (!member)
+                if (Player* member = gref->GetSource())
                 {
-                    continue;
-                }
-
-                if (!member->GetSession()->IsBot())
-                {
-                    return;
+                    if (WorldSession* session = member->GetSession();session && !session->IsBot())
+                        return;
                 }
             }
         }
 
-        // otherwise apply bot XP multiplier.
+        // Otherwise apply XP multiplier
         amount = static_cast<uint32>(std::round(static_cast<float>(amount) * sPlayerbotAIConfig->randomBotXPRate));
     }
 };
@@ -331,6 +351,9 @@ public:
 
         LOG_INFO("server.loading", ">> Loaded playerbots config in {} ms", GetMSTimeDiffToNow(oldMSTime));
         LOG_INFO("server.loading", " ");
+
+        sPlayerbotSpellCache->Initialize();
+
         LOG_INFO("server.loading", "Playerbots World Thread Processor initialized");
     }
 

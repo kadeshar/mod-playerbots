@@ -1480,10 +1480,10 @@ bool RandomPlayerbotMgr::ProcessBot(uint32 bot)
             if (!sRandomPlayerbotMgr->IsRandomBot(player))
                 update = false;
 
-            if (player->GetGroup() && botAI->GetGroupMaster())
+            if (player->GetGroup() && botAI->GetGroupLeader())
             {
-                PlayerbotAI* groupMasterBotAI = GET_PLAYERBOT_AI(botAI->GetGroupMaster());
-                if (!groupMasterBotAI || groupMasterBotAI->IsRealPlayer())
+                PlayerbotAI* groupLeaderBotAI = GET_PLAYERBOT_AI(botAI->GetGroupLeader());
+                if (!groupLeaderBotAI || groupLeaderBotAI->IsRealPlayer())
                 {
                     update = false;
                 }
@@ -2594,17 +2594,14 @@ void RandomPlayerbotMgr::Refresh(Player* bot)
 
 bool RandomPlayerbotMgr::IsRandomBot(Player* bot)
 {
-    if (bot && GET_PLAYERBOT_AI(bot))
-    {
-        if (GET_PLAYERBOT_AI(bot)->IsRealPlayer())
-            return false;
-    }
-    if (bot)
-    {
-        return IsRandomBot(bot->GetGUID().GetCounter());
-    }
+    if (!bot)
+        return false;
 
-    return false;
+    PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
+    if (!botAI || botAI->IsRealPlayer())
+        return false;
+
+    return IsRandomBot(bot->GetGUID().GetCounter());
 }
 
 bool RandomPlayerbotMgr::IsRandomBot(ObjectGuid::LowType bot)
