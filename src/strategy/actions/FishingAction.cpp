@@ -261,7 +261,9 @@ bool MoveNearWaterAction::isUseful()
         return false;
     FishingSpotValue* fishingSpotValueObject = (FishingSpotValue*)context->GetValue<WorldPosition>("fishing spot");
     WorldPosition pos = fishingSpotValueObject->Get();
-    return !pos.IsValid() || fishingSpotValueObject->IsStale(FISHING_LOCATION_TIMEOUT) || pos != bot->GetPosition();
+    return !pos.IsValid() || fishingSpotValueObject->IsStale(FISHING_LOCATION_TIMEOUT) ||
+           bot->GetExactDist(&pos) < 0.1f;
+
 }
 
 bool MoveNearWaterAction::isPossible()
@@ -298,6 +300,17 @@ bool MoveNearWaterAction::isPossible()
                 return true;
             }
         }
+    }
+    // Can the bot fish from current position?
+    WorldPosition waterAtCurrentPos =
+        FindWaterRadial(bot, bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(), bot->GetMap(),
+                        bot->GetPhaseMask(), MIN_DISTANCE_TO_WATER, MAX_DISTANCE_TO_WATER, SEARCH_INCREMENT, true);
+    if (waterAtCurrentPos.IsValid())
+    {
+        SET_AI_VALUE(WorldPosition, "fishing spot",
+                     WorldPosition(WorldPosition(bot->GetMapId(), bot->GetPositionX(), bot->GetPositionY(),
+                                                 bot->GetPositionZ())));
+        return false;
     }
     // Lets find some water where we can fish.
     WorldPosition water = FindWaterRadial(
@@ -435,10 +448,14 @@ bool FishingAction::isUseful()
 {
     if (!AI_VALUE(bool, "can fish"))
         return false;
+
     FishingSpotValue* fishingSpotValueObject = (FishingSpotValue*)context->GetValue<WorldPosition>("fishing spot");
     WorldPosition pos = fishingSpotValueObject->Get();
 
-    return pos.IsValid() && !fishingSpotValueObject->IsStale(FISHING_LOCATION_TIMEOUT) && pos == bot->GetPosition();
+    if (!pos.IsValid() || fishingSpotValueObject->IsStale(FISHING_LOCATION_TIMEOUT))
+        return false;
+
+    return bot->GetExactDist(&pos) < 0.1f;
 }
 
 bool UseBobberAction::isUseful()

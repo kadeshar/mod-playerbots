@@ -178,9 +178,9 @@ bool MaintenanceAction::Execute(Event event)
         factory.InitTalentsTree(true);
         factory.InitPet();
         factory.InitPetTalents();
+        factory.InitSkills();
         factory.InitClassSpells();
         factory.InitAvailableSpells();
-        factory.InitSkills();
         factory.InitReputation();
         factory.InitSpecialSpells();
         factory.InitMounts();
@@ -221,14 +221,14 @@ bool MaintenanceAction::Execute(Event event)
         if (sPlayerbotAIConfig->altMaintenancePetTalents)
             factory.InitPetTalents();
 
+        if (sPlayerbotAIConfig->altMaintenanceSkills)
+            factory.InitSkills();
+
         if (sPlayerbotAIConfig->altMaintenanceClassSpells)
             factory.InitClassSpells();
 
         if (sPlayerbotAIConfig->altMaintenanceAvailableSpells)
             factory.InitAvailableSpells();
-
-        if (sPlayerbotAIConfig->altMaintenanceSkills)
-            factory.InitSkills();
 
         if (sPlayerbotAIConfig->altMaintenanceReputation)
             factory.InitReputation();

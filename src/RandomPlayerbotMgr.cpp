@@ -3214,6 +3214,12 @@ void RandomPlayerbotMgr::PrintStats()
         lvlPerRace[bot->getRace()] += bot->GetLevel();
 
         PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
+        if (!botAI)
+        {
+            LOG_ERROR("playerbots", "Player/Bot {} is registered in sRandomPlayerbotMgr playerBots and has no bot AI!", bot->GetName().c_str());
+            continue;
+        }
+
         if (botAI->AllowActivity())
             ++active;
 

@@ -288,17 +288,17 @@ void PlayerbotFactory::Randomize(bool incremental)
             pmo->finish();
     }
 
-    pmo = sPerformanceMonitor->start(PERF_MON_RNDBOT, "PlayerbotFactory_Spells1");
-    LOG_DEBUG("playerbots", "Initializing spells (step 1)...");
+    LOG_DEBUG("playerbots", "Initializing skills (step 1)...");
+    pmo = sPerformanceMonitor->start(PERF_MON_RNDBOT, "PlayerbotFactory_Skills1");
     bot->LearnDefaultSkills();
-    InitClassSpells();
-    InitAvailableSpells();
+    InitSkills();
     if (pmo)
         pmo->finish();
 
-    LOG_DEBUG("playerbots", "Initializing skills (step 1)...");
-    pmo = sPerformanceMonitor->start(PERF_MON_RNDBOT, "PlayerbotFactory_Skills1");
-    InitSkills();
+    pmo = sPerformanceMonitor->start(PERF_MON_RNDBOT, "PlayerbotFactory_Spells1");
+    LOG_DEBUG("playerbots", "Initializing spells (step 1)...");
+    InitClassSpells();
+    InitAvailableSpells();
     if (pmo)
         pmo->finish();
 
@@ -506,9 +506,9 @@ void PlayerbotFactory::Refresh()
     InitPotions();
     InitPet();
     InitPetTalents();
+    InitSkills();
     InitClassSpells();
     InitAvailableSpells();
-    InitSkills();
     InitReputation();
     InitSpecialSpells();
     InitMounts();
@@ -2550,13 +2550,19 @@ void PlayerbotFactory::InitAvailableSpells()
 
         for (auto& spell : trainer->GetSpells())
         {
-            if (!trainer->CanTeachSpell(bot, trainer->GetSpell(spell.SpellId)))
+            // simplified version of Trainer::TeachSpell method
+
+            Trainer::Spell const* trainerSpell = trainer->GetSpell(spell.SpellId);
+            if (!trainerSpell)
                 continue;
 
-            if (spell.IsCastable())
-                bot->CastSpell(bot, spell.SpellId, true);
+            if (!trainer->CanTeachSpell(bot, trainerSpell))
+                continue;
+
+            if (trainerSpell->IsCastable())
+                bot->CastSpell(bot, trainerSpell->SpellId, true);
             else
-                bot->learnSpell(spell.SpellId, false);
+                bot->learnSpell(trainerSpell->SpellId, false);
         }
     }
 }
