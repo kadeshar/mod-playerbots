@@ -219,13 +219,6 @@ protected:
     FourhorsemanBossHelper helper;
 };
 
-// class SapphironGroundMainTankPositionAction : public MovementAction
-// {
-// public:
-//     SapphironGroundMainTankPositionAction(PlayerbotAI* ai) : MovementAction(ai, "sapphiron ground main tank
-//     position") {} virtual bool Execute(Event event);
-// };
-
 class SapphironGroundPositionAction : public MovementAction
 {
 public:
@@ -246,13 +239,6 @@ protected:
     SapphironBossHelper helper;
     bool MoveToNearestIcebolt();
 };
-
-// class SapphironAvoidChillAction : public MovementAction
-// {
-// public:
-//     SapphironAvoidChillAction(PlayerbotAI* ai) : MovementAction(ai, "sapphiron avoid chill") {}
-//     virtual bool Execute(Event event);
-// };
 
 class KelthuzadChooseTargetAction : public AttackAction
 {
@@ -385,6 +371,25 @@ class MaexxnaTankSpiderlingsAction : public AttackAction
 {
 public:
     MaexxnaTankSpiderlingsAction(PlayerbotAI* ai) : AttackAction(ai, "maexxna tank spiderlings") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+// Gothik the Harvester
+class GothikMoveToAssignedSideAction : public MovementAction
+{
+public:
+    GothikMoveToAssignedSideAction(PlayerbotAI* ai) : MovementAction(ai, "gothik move to assigned side") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+class GothikChooseTargetAction : public AttackAction
+{
+public:
+    GothikChooseTargetAction(PlayerbotAI* ai) : AttackAction(ai, "gothik choose target") {}
 
     bool Execute(Event event) override;
     bool isUseful() override;

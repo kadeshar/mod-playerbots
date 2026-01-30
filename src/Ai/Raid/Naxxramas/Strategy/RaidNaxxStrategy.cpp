@@ -54,9 +54,7 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
     triggers.push_back(new TriggerNode("faerlina frenzy",
         {
-            // Hunters: remove the enrage if possible.
             NextAction("tranquilizing shot", ACTION_RAID + 4),
-            // Otherwise fall back to the intended encounter mechanic.
             NextAction("faerlina sacrifice worshipper", ACTION_RAID + 3)
         }
     ));
@@ -77,6 +75,15 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
             NextAction("avoid aoe", ACTION_RAID + 1)
         })
     );
+
+    // Gothik the Harvester
+    triggers.push_back(new TriggerNode("gothik move to assigned side",
+        { NextAction("gothik move to assigned side", ACTION_RAID + 4) }
+    ));
+
+    triggers.push_back(new TriggerNode("gothik choose target",
+        { NextAction("gothik choose target", ACTION_RAID + 1) }
+    ));
 
     // Patchwerk
     triggers.push_back(new TriggerNode("patchwerk tank",
@@ -179,7 +186,6 @@ void RaidNaxxStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
     multipliers.push_back(new KelthuzadGenericMultiplier(botAI));
     multipliers.push_back(new AnubrekhanGenericMultiplier(botAI));
     multipliers.push_back(new FourhorsemanGenericMultiplier(botAI));
-    // multipliers.push_back(new GothikGenericMultiplier(botAI));
     multipliers.push_back(new GluthGenericMultiplier(botAI));
     multipliers.push_back(new NothGenericMultiplier(botAI));
 }

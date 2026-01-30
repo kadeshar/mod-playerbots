@@ -296,21 +296,13 @@ bool MaexxnaSpiderlingsTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "maexxna");
     if (!boss)
-    {
         return false;
-    }
 
-    // Only relevant during the actual encounter.
     if (!bot->IsInCombat() && !boss->IsInCombat())
-    {
         return false;
-    }
 
-    // In 25-man we typically have an off-tank; keep the main tank on Maexxna.
     if (!botAI->IsTank(bot) || botAI->IsMainTank(bot))
-    {
         return false;
-    }
 
     GuidVector attackers = AI_VALUE(GuidVector, "attackers");
     for (ObjectGuid const& guid : attackers)
@@ -321,6 +313,24 @@ bool MaexxnaSpiderlingsTrigger::IsActive()
     }
 
     return false;
+}
+
+bool GothikMoveToAssignedSideTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "gothik the harvester");
+    if (!boss)
+        return false;
+
+    return bot->GetDistance(boss) <= 160.0f;
+}
+
+bool GothikChooseTargetTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "gothik the harvester");
+    if (!boss)
+        return false;
+
+    return boss->IsInCombat() || bot->IsInCombat();
 }
 
 bool PatchwerkTankTrigger::IsActive()

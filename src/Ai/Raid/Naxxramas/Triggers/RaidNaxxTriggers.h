@@ -142,6 +142,20 @@ public:
     bool IsActive() override;
 };
 
+class GothikMoveToAssignedSideTrigger : public Trigger
+{
+public:
+    GothikMoveToAssignedSideTrigger(PlayerbotAI* ai) : Trigger(ai, "gothik move to assigned side") {}
+    bool IsActive() override;
+};
+
+class GothikChooseTargetTrigger : public Trigger
+{
+public:
+    GothikChooseTargetTrigger(PlayerbotAI* ai) : Trigger(ai, "gothik choose target") {}
+    bool IsActive() override;
+};
+
 class PatchwerkTankTrigger : public Trigger
 {
 public:

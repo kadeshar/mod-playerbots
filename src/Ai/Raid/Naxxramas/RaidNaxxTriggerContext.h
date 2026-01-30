@@ -19,6 +19,7 @@ public:
         creators["mutating injection ranged"] = &RaidNaxxTriggerContext::mutating_injection_ranged;
         creators["mutating injection removed"] = &RaidNaxxTriggerContext::mutating_injection_removed;
         creators["grobbulus cloud"] = &RaidNaxxTriggerContext::grobbulus_cloud;
+
         creators["heigan melee"] = &RaidNaxxTriggerContext::heigan_melee;
         creators["heigan ranged"] = &RaidNaxxTriggerContext::heigan_ranged;
 
@@ -39,11 +40,17 @@ public:
         creators["kel'thuzad"] = &RaidNaxxTriggerContext::kelthuzad;
 
         creators["anub'rekhan"] = &RaidNaxxTriggerContext::anubrekhan;
+
         creators["faerlina"] = &RaidNaxxTriggerContext::faerlina;
         creators["faerlina frenzy"] = &RaidNaxxTriggerContext::faerlina_frenzy;
+
         creators["maexxna"] = &RaidNaxxTriggerContext::maexxna;
         creators["maexxna web wrap"] = &RaidNaxxTriggerContext::maexxna_web_wrap;
         creators["maexxna spiderlings"] = &RaidNaxxTriggerContext::maexxna_spiderlings;
+
+        creators["gothik move to assigned side"] = &RaidNaxxTriggerContext::gothik_move_to_assigned_side;
+        creators["gothik choose target"] = &RaidNaxxTriggerContext::gothik_choose_target;
+
         creators["patchwerk tank"] = &RaidNaxxTriggerContext::patchwerk_tank;
         creators["patchwerk non-tank"] = &RaidNaxxTriggerContext::patchwerk_non_tank;
         creators["patchwerk ranged"] = &RaidNaxxTriggerContext::patchwerk_ranged;
@@ -82,6 +89,8 @@ private:
     static Trigger* maexxna(PlayerbotAI* ai) { return new MaexxnaTrigger(ai); }
     static Trigger* maexxna_web_wrap(PlayerbotAI* ai) { return new MaexxnaWebWrapTrigger(ai); }
     static Trigger* maexxna_spiderlings(PlayerbotAI* ai) { return new MaexxnaSpiderlingsTrigger(ai); }
+    static Trigger* gothik_move_to_assigned_side(PlayerbotAI* ai) { return new GothikMoveToAssignedSideTrigger(ai); }
+    static Trigger* gothik_choose_target(PlayerbotAI* ai) { return new GothikChooseTargetTrigger(ai); }
     static Trigger* patchwerk_tank(PlayerbotAI* ai) { return new PatchwerkTankTrigger(ai); }
     static Trigger* patchwerk_non_tank(PlayerbotAI* ai) { return new PatchwerkNonTankTrigger(ai); }
     static Trigger* patchwerk_ranged(PlayerbotAI* ai) { return new PatchwerkRangedTrigger(ai); }

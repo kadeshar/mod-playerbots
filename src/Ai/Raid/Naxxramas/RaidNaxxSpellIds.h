@@ -17,6 +17,16 @@ namespace NaxxSpellIds
     static constexpr uint32 MaexxnaWebWrapEntry = 16486;
     static constexpr uint32 MaexxnaSpiderlingEntry = 17055;
 
+    // Gothik the Harvester
+    static constexpr float GothikGateY = -3360.78f;
+    static constexpr uint32 GothikLivingTraineeEntry = 16124;
+    static constexpr uint32 GothikLivingKnightEntry  = 16125;
+    static constexpr uint32 GothikLivingRiderEntry   = 16126;
+    static constexpr uint32 GothikDeadTraineeEntry   = 16127;
+    static constexpr uint32 GothikDeadKnightEntry    = 16148;
+    static constexpr uint32 GothikDeadHorseEntry     = 16149;
+    static constexpr uint32 GothikDeadRiderEntry     = 16150;
+
     // Heigan
     static constexpr uint32 Eruption10 = 29371;
 /*

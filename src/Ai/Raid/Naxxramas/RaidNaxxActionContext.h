@@ -22,9 +22,8 @@ public:
 
         creators["heigan dance melee"] = &RaidNaxxActionContext::heigan_dance_melee;
         creators["heigan dance ranged"] = &RaidNaxxActionContext::heigan_dance_ranged;
+
         creators["thaddius attack nearest pet"] = &RaidNaxxActionContext::thaddius_attack_nearest_pet;
-        // creators["thaddius melee to place"] = &RaidNaxxActionContext::thaddius_tank_to_place;
-        // creators["thaddius ranged to place"] = &RaidNaxxActionContext::thaddius_ranged_to_place;
         creators["thaddius move to platform"] = &RaidNaxxActionContext::thaddius_move_to_platform;
         creators["thaddius move polarity"] = &RaidNaxxActionContext::thaddius_move_polarity;
 
@@ -48,6 +47,9 @@ public:
         creators["maexxna attack web wrap"] = &RaidNaxxActionContext::maexxna_attack_web_wrap;
         creators["maexxna tank spiderlings"] = &RaidNaxxActionContext::maexxna_tank_spiderlings;
 
+        creators["gothik move to assigned side"] = &RaidNaxxActionContext::gothik_move_to_assigned_side;
+        creators["gothik choose target"] = &RaidNaxxActionContext::gothik_choose_target;
+
         creators["gluth choose target"] = &RaidNaxxActionContext::gluth_choose_target;
         creators["gluth position"] = &RaidNaxxActionContext::gluth_position;
         creators["gluth slowdown"] = &RaidNaxxActionContext::gluth_slowdown;
@@ -69,8 +71,6 @@ private:
     static Action* heigan_dance_melee(PlayerbotAI* ai) { return new HeiganDanceMeleeAction(ai); }
     static Action* heigan_dance_ranged(PlayerbotAI* ai) { return new HeiganDanceRangedAction(ai); }
     static Action* thaddius_attack_nearest_pet(PlayerbotAI* ai) { return new ThaddiusAttackNearestPetAction(ai); }
-    // static Action* thaddius_tank_to_place(PlayerbotAI* ai) { return new ThaddiusMeleeToPlaceAction(ai); }
-    // static Action* thaddius_ranged_to_place(PlayerbotAI* ai) { return new ThaddiusRangedToPlaceAction(ai); }
     static Action* thaddius_move_to_platform(PlayerbotAI* ai) { return new ThaddiusMoveToPlatformAction(ai); }
     static Action* thaddius_move_polarity(PlayerbotAI* ai) { return new ThaddiusMovePolarityAction(ai); }
     static Action* razuvious_target(PlayerbotAI* ai) { return new RazuviousTargetAction(ai); }
@@ -83,11 +83,8 @@ private:
         return new HorsemanAttractAlternativelyAction(ai);
     }
     static Action* horseman_attack_in_order(PlayerbotAI* ai) { return new HorsemanAttactInOrderAction(ai); }
-    // static Action* sapphiron_ground_main_tank_position(PlayerbotAI* ai) { return new
-    // SapphironGroundMainTankPositionAction(ai); }
     static Action* sapphiron_ground_position(PlayerbotAI* ai) { return new SapphironGroundPositionAction(ai); }
     static Action* sapphiron_flight_position(PlayerbotAI* ai) { return new SapphironFlightPositionAction(ai); }
-    // static Action* sapphiron_avoid_chill(PlayerbotAI* ai) { return new SapphironAvoidChillAction(ai); }
     static Action* kelthuzad_choose_target(PlayerbotAI* ai) { return new KelthuzadChooseTargetAction(ai); }
     static Action* kelthuzad_position(PlayerbotAI* ai) { return new KelthuzadPositionAction(ai); }
     static Action* anubrekhan_choose_target(PlayerbotAI* ai) { return new AnubrekhanChooseTargetAction(ai); }
@@ -95,6 +92,8 @@ private:
     static Action* faerlina_sacrifice_worshipper(PlayerbotAI* ai) { return new FaerlinaSacrificeWorshipperAction(ai); }
     static Action* maexxna_attack_web_wrap(PlayerbotAI* ai) { return new MaexxnaAttackWebWrapAction(ai); }
     static Action* maexxna_tank_spiderlings(PlayerbotAI* ai) { return new MaexxnaTankSpiderlingsAction(ai); }
+    static Action* gothik_move_to_assigned_side(PlayerbotAI* ai) { return new GothikMoveToAssignedSideAction(ai); }
+    static Action* gothik_choose_target(PlayerbotAI* ai) { return new GothikChooseTargetAction(ai); }
     static Action* gluth_choose_target(PlayerbotAI* ai) { return new GluthChooseTargetAction(ai); }
     static Action* gluth_position(PlayerbotAI* ai) { return new GluthPositionAction(ai); }
     static Action* gluth_slowdown(PlayerbotAI* ai) { return new GluthSlowdownAction(ai); }
