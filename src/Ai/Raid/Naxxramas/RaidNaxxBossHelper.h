@@ -530,9 +530,10 @@ private:
 class LoathebBossHelper : public AiObject
 {
 public:
-    const std::pair<float, float> mainTankPos = {2877.57f, -3967.00f};
+    const std::pair<float, float> mainTankPos = {2910.1597f, -4010.0f};
     const std::pair<float, float> rangePos = {2896.96f, -3980.61f};
     LoathebBossHelper(PlayerbotAI* botAI) : AiObject(botAI) {}
+    Unit* GetBoss() const { return _unit; }
     bool UpdateBossAI()
     {
         if (!bot->IsInCombat())
