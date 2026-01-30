@@ -42,6 +42,8 @@ public:
         creators["faerlina"] = &RaidNaxxTriggerContext::faerlina;
         creators["faerlina frenzy"] = &RaidNaxxTriggerContext::faerlina_frenzy;
         creators["maexxna"] = &RaidNaxxTriggerContext::maexxna;
+        creators["maexxna web wrap"] = &RaidNaxxTriggerContext::maexxna_web_wrap;
+        creators["maexxna spiderlings"] = &RaidNaxxTriggerContext::maexxna_spiderlings;
         creators["patchwerk tank"] = &RaidNaxxTriggerContext::patchwerk_tank;
         creators["patchwerk non-tank"] = &RaidNaxxTriggerContext::patchwerk_non_tank;
         creators["patchwerk ranged"] = &RaidNaxxTriggerContext::patchwerk_ranged;
@@ -78,6 +80,8 @@ private:
     static Trigger* faerlina(PlayerbotAI* ai) { return new FaerlinaTrigger(ai); }
     static Trigger* faerlina_frenzy(PlayerbotAI* ai) { return new FaerlinaFrenzyTrigger(ai); }	
     static Trigger* maexxna(PlayerbotAI* ai) { return new MaexxnaTrigger(ai); }
+    static Trigger* maexxna_web_wrap(PlayerbotAI* ai) { return new MaexxnaWebWrapTrigger(ai); }
+    static Trigger* maexxna_spiderlings(PlayerbotAI* ai) { return new MaexxnaSpiderlingsTrigger(ai); }
     static Trigger* patchwerk_tank(PlayerbotAI* ai) { return new PatchwerkTankTrigger(ai); }
     static Trigger* patchwerk_non_tank(PlayerbotAI* ai) { return new PatchwerkNonTankTrigger(ai); }
     static Trigger* patchwerk_ranged(PlayerbotAI* ai) { return new PatchwerkRangedTrigger(ai); }

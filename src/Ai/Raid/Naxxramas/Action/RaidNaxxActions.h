@@ -371,4 +371,23 @@ public:
     bool Execute(Event event) override;
 };
 
+// Maexxna
+class MaexxnaAttackWebWrapAction : public AttackAction
+{
+public:
+    MaexxnaAttackWebWrapAction(PlayerbotAI* ai) : AttackAction(ai, "maexxna attack web wrap") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
+class MaexxnaTankSpiderlingsAction : public AttackAction
+{
+public:
+    MaexxnaTankSpiderlingsAction(PlayerbotAI* ai) : AttackAction(ai, "maexxna tank spiderlings") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+};
+
 #endif

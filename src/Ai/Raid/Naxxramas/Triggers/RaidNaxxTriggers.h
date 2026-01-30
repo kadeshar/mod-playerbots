@@ -128,6 +128,20 @@ public:
     bool IsActive() override;
 };
 
+class MaexxnaWebWrapTrigger : public Trigger
+{
+public:
+    MaexxnaWebWrapTrigger(PlayerbotAI* ai) : Trigger(ai, "maexxna web wrap") {}
+    bool IsActive() override;
+};
+
+class MaexxnaSpiderlingsTrigger : public Trigger
+{
+public:
+    MaexxnaSpiderlingsTrigger(PlayerbotAI* ai) : Trigger(ai, "maexxna spiderlings") {}
+    bool IsActive() override;
+};
+
 class PatchwerkTankTrigger : public Trigger
 {
 public:

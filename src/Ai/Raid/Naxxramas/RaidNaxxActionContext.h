@@ -45,6 +45,9 @@ public:
 
         creators["faerlina sacrifice worshipper"] = &RaidNaxxActionContext::faerlina_sacrifice_worshipper;
 
+        creators["maexxna attack web wrap"] = &RaidNaxxActionContext::maexxna_attack_web_wrap;
+        creators["maexxna tank spiderlings"] = &RaidNaxxActionContext::maexxna_tank_spiderlings;
+
         creators["gluth choose target"] = &RaidNaxxActionContext::gluth_choose_target;
         creators["gluth position"] = &RaidNaxxActionContext::gluth_position;
         creators["gluth slowdown"] = &RaidNaxxActionContext::gluth_slowdown;
@@ -90,6 +93,8 @@ private:
     static Action* anubrekhan_choose_target(PlayerbotAI* ai) { return new AnubrekhanChooseTargetAction(ai); }
     static Action* anubrekhan_position(PlayerbotAI* ai) { return new AnubrekhanPositionAction(ai); }
     static Action* faerlina_sacrifice_worshipper(PlayerbotAI* ai) { return new FaerlinaSacrificeWorshipperAction(ai); }
+    static Action* maexxna_attack_web_wrap(PlayerbotAI* ai) { return new MaexxnaAttackWebWrapAction(ai); }
+    static Action* maexxna_tank_spiderlings(PlayerbotAI* ai) { return new MaexxnaTankSpiderlingsAction(ai); }
     static Action* gluth_choose_target(PlayerbotAI* ai) { return new GluthChooseTargetAction(ai); }
     static Action* gluth_position(PlayerbotAI* ai) { return new GluthPositionAction(ai); }
     static Action* gluth_slowdown(PlayerbotAI* ai) { return new GluthSlowdownAction(ai); }

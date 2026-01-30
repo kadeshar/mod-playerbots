@@ -62,6 +62,14 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     ));
 
     // Maexxna
+    triggers.push_back(new TriggerNode("maexxna web wrap",
+        { NextAction("maexxna attack web wrap", ACTION_RAID + 5) }
+    ));
+
+    triggers.push_back(new TriggerNode("maexxna spiderlings",
+        { NextAction("maexxna tank spiderlings", ACTION_RAID + 2) }
+    ));
+
     triggers.push_back(
         new TriggerNode("maexxna",
         {

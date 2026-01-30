@@ -245,6 +245,84 @@ bool MaexxnaTrigger::IsActive()
     return !botAI->IsTank(bot);
 }
 
+bool MaexxnaWebWrapTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "maexxna");
+    if (!boss)
+    {
+        return false;
+    }
+
+    // Only relevant during the actual encounter.
+    if (!bot->IsInCombat() && !boss->IsInCombat())
+    {
+        return false;
+    }
+
+    // Prefer ranged DPS/casters to break cocoons with minimal movement.
+    if (botAI->IsTank(bot) || botAI->IsHeal(bot) || !botAI->IsRanged(bot))
+    {
+        return false;
+    }
+
+    // If any member is web-wrapped, we want to break it.
+    if (Group* group = bot->GetGroup())
+    {
+        for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+        {
+            Player* member = ref->GetSource();
+            if (!member || !member->IsAlive())
+                continue;
+
+            if (botAI->HasAura(NaxxSpellIds::MaexxnaWebWrapStun, member))
+                return true;
+        }
+    }
+
+    // Or if the cocoon NPC exists in our target list.
+    static constexpr uint32 MaexxnaWebWrapEntry = 16486;
+    GuidVector targets = AI_VALUE(GuidVector, "possible targets no los");
+    for (ObjectGuid const& guid : targets)
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (unit && unit->GetEntry() == NaxxSpellIds::MaexxnaWebWrapEntry)
+            return true;
+    }
+
+    return false;
+}
+
+bool MaexxnaSpiderlingsTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "maexxna");
+    if (!boss)
+    {
+        return false;
+    }
+
+    // Only relevant during the actual encounter.
+    if (!bot->IsInCombat() && !boss->IsInCombat())
+    {
+        return false;
+    }
+
+    // In 25-man we typically have an off-tank; keep the main tank on Maexxna.
+    if (!botAI->IsTank(bot) || botAI->IsMainTank(bot))
+    {
+        return false;
+    }
+
+    GuidVector attackers = AI_VALUE(GuidVector, "attackers");
+    for (ObjectGuid const& guid : attackers)
+    {
+        Unit* unit = botAI->GetUnit(guid);
+        if (unit && unit->GetEntry() == NaxxSpellIds::MaexxnaSpiderlingEntry)
+            return true;
+    }
+
+    return false;
+}
+
 bool PatchwerkTankTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "patchwerk");

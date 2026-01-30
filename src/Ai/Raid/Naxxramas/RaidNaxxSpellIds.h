@@ -12,6 +12,11 @@ namespace NaxxSpellIds
     static constexpr uint32 FaerlinaFrenzy = 28798;
     static constexpr uint32 FaerlinaWidowsEmbrace = 28732;
 
+    // Maexxna
+    static constexpr uint32 MaexxnaWebWrapStun = 28622;
+    static constexpr uint32 MaexxnaWebWrapEntry = 16486;
+    static constexpr uint32 MaexxnaSpiderlingEntry = 17055;
+
     // Heigan
     static constexpr uint32 Eruption10 = 29371;
 /*
