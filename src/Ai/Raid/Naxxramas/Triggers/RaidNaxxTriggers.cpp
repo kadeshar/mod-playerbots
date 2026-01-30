@@ -182,7 +182,6 @@ bool GluthMainTankMortalWoundTrigger::IsActive()
     Aura* aura = NaxxSpellIds::GetAnyAura(mt, {NaxxSpellIds::MortalWound10, NaxxSpellIds::MortalWound25});
     if (!aura)
     {
-        // Fallback to name for custom spell data.
         aura = botAI->GetAura("mortal wound", mt, false, true);
     }
     if (!aura || aura->GetStackAmount() < 5)
@@ -194,13 +193,13 @@ bool GluthMainTankMortalWoundTrigger::IsActive()
 
 bool KelthuzadTrigger::IsActive() { return helper.UpdateBossAI(); }
 
-bool AnubrekhanTrigger::IsActive() {
+bool AnubrekhanTrigger::IsActive()
+{
     Unit* boss = AI_VALUE2(Unit*, "find target", "anub'rekhan");
     if (!boss)
-    {
         return false;
-    }
-    return true;
+
+    return bot->IsInCombat() || boss->IsInCombat();
 }
 
 bool FaerlinaTrigger::IsActive()

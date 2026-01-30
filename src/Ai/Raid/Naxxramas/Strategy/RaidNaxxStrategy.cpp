@@ -41,7 +41,10 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 
     // Anub'Rekhan
     triggers.push_back(new TriggerNode("anub'rekhan",
-        { NextAction("anub'rekhan position", ACTION_RAID + 1) }
+        {
+            NextAction("anub'rekhan position", ACTION_RAID + 2),
+            NextAction("anub'rekhan choose target", ACTION_RAID + 1)
+        }
     ));
 
      // Grand Widow Faerlina

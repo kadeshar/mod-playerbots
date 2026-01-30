@@ -2,62 +2,89 @@
 
 #include "ObjectGuid.h"
 #include "Playerbots.h"
+#include "RaidNaxxSpellIds.h"
 
 bool AnubrekhanChooseTargetAction::Execute(Event event)
 {
     GuidVector attackers = context->GetValue<GuidVector>("attackers")->Get();
     Unit* target = nullptr;
-    Unit* target_boss = nullptr;
-    std::vector<Unit*> target_guards;
+    Unit* targetBoss = nullptr;
+    std::vector<Unit*> cryptGuards;
+    std::vector<Unit*> corpseScarabs;
     for (ObjectGuid const guid : attackers)
     {
         Unit* unit = botAI->GetUnit(guid);
         if (!unit)
             continue;
-        if (botAI->EqualLowercaseName(unit->GetName(), "crypt guard"))
-        {
-            target_guards.push_back(unit);
-        }
+
         if (botAI->EqualLowercaseName(unit->GetName(), "anub'rekhan"))
-        {
-            target_boss = unit;
-        }
+            targetBoss = unit;
+        else if (botAI->EqualLowercaseName(unit->GetName(), "crypt guard"))
+            cryptGuards.push_back(unit);
+        else if (botAI->EqualLowercaseName(unit->GetName(), "corpse scarab"))
+            corpseScarabs.push_back(unit);
     }
+
+    if (!targetBoss && cryptGuards.empty() && corpseScarabs.empty())
+        return false;
+
     if (botAI->IsMainTank(bot))
     {
-        target = target_boss;
+        target = targetBoss;
+    }
+    else if (botAI->IsAssistTank(bot))
+    {
+        for (Unit* add : cryptGuards)
+        {
+            Player* victim = add->GetVictim() ? add->GetVictim()->ToPlayer() : nullptr;
+            if (!victim || !botAI->IsTank(victim))
+            {
+                target = add;
+                break;
+            }
+        }
+        if (!target)
+        {
+            if (!cryptGuards.empty())
+                target = cryptGuards.front();
+            else
+                target = targetBoss;
+        }
     }
     else
     {
-        if (target_guards.size() == 0)
+        if (!cryptGuards.empty())
         {
-            target = target_boss;
+            for (Unit* add : cryptGuards)
+            {
+                if (!target || target->GetHealthPct() > add->GetHealthPct())
+                    target = add;
+            }
+        }
+        else if (!corpseScarabs.empty())
+        {
+            for (Unit* scarab : corpseScarabs)
+            {
+                Player* victim = scarab->GetVictim() ? scarab->GetVictim()->ToPlayer() : nullptr;
+                if (victim && !botAI->IsTank(victim))
+                {
+                    target = scarab;
+                    break;
+                }
+            }
+
+            if (!target)
+                target = corpseScarabs.front();
         }
         else
         {
-            if (botAI->IsAssistTank(bot))
-            {
-                for (Unit* t : target_guards)
-                {
-                    if (target == nullptr || (target->GetVictim() && target->GetVictim()->ToPlayer() &&
-                                              botAI->IsTank(target->GetVictim()->ToPlayer())))
-                    {
-                        target = t;
-                    }
-                }
-            }
-            else
-            {
-                for (Unit* t : target_guards)
-                {
-                    if (target == nullptr || target->GetHealthPct() > t->GetHealthPct())
-                    {
-                        target = t;
-                    }
-                }
-            }
+            target = targetBoss;
         }
     }
+
+    if (!target)
+        return false;
+
     if (context->GetValue<Unit*>("current target")->Get() == target)
     {
         return false;
@@ -72,22 +99,17 @@ bool AnubrekhanPositionAction::Execute(Event event)
     {
         return false;
     }
-    bool inPhase = botAI->HasAura("locust swarm", boss) || boss->GetCurrentSpell(CURRENT_GENERIC_SPELL);
+
+    bool inPhase = NaxxSpellIds::HasAnyAura(botAI, boss, {NaxxSpellIds::LocustSwarm10, NaxxSpellIds::LocustSwarm10Alt,
+                                                         NaxxSpellIds::LocustSwarm25}) ||
+                   botAI->HasAura("locust swarm", boss);
     if (inPhase)
     {
         if (botAI->IsMainTank(bot))
         {
             uint32 nearest = FindNearestWaypoint();
-            uint32 next_point;
-            if (inPhase)
-            {
-                next_point = (nearest + 1) % intervals;
-            }
-            else
-            {
-                next_point = nearest;
-            }
-            return MoveTo(bot->GetMapId(), waypoints[next_point].first, waypoints[next_point].second, bot->GetPositionZ(), false, false,
+            uint32 nextPoint = (nearest + 1) % intervals;
+            return MoveTo(bot->GetMapId(), waypoints[nextPoint].first, waypoints[nextPoint].second, bot->GetPositionZ(), false, false,
                           false, false, MovementPriority::MOVEMENT_COMBAT);
         }
         else
