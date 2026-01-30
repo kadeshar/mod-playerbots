@@ -52,6 +52,15 @@ void RaidNaxxStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
         { NextAction("avoid aoe", ACTION_RAID + 1) }
     ));
 
+    triggers.push_back(new TriggerNode("faerlina frenzy",
+        {
+            // Hunters: remove the enrage if possible.
+            NextAction("tranquilizing shot", ACTION_RAID + 4),
+            // Otherwise fall back to the intended encounter mechanic.
+            NextAction("faerlina sacrifice worshipper", ACTION_RAID + 3)
+        }
+    ));
+
     // Maexxna
     triggers.push_back(
         new TriggerNode("maexxna",

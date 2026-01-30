@@ -212,6 +212,29 @@ bool FaerlinaTrigger::IsActive()
     return true;
 }
 
+bool FaerlinaFrenzyTrigger::IsActive()
+{
+    Unit* boss = AI_VALUE2(Unit*, "find target", "grand widow faerlina");
+    if (!boss)
+    {
+        return false;
+    }
+
+    // Only relevant during the actual encounter.
+    if (!bot->IsInCombat() && !boss->IsInCombat())
+    {
+        return false;
+    }
+
+    // Frenzy is handled either via a sacrifice (Widow's Embrace) or by removing the enrage.
+    if (boss->HasAura(NaxxSpellIds::FaerlinaWidowsEmbrace))
+    {
+        return false;
+    }
+
+    return boss->HasAura(NaxxSpellIds::FaerlinaFrenzy);
+}
+
 bool MaexxnaTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "maexxna");

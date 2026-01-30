@@ -114,6 +114,13 @@ public:
      bool IsActive() override;
  };
 
+class FaerlinaFrenzyTrigger : public Trigger
+{
+public:
+    FaerlinaFrenzyTrigger(PlayerbotAI* ai) : Trigger(ai, "faerlina frenzy") {}
+    bool IsActive() override;
+};
+
 class MaexxnaTrigger : public Trigger
 {
 public:

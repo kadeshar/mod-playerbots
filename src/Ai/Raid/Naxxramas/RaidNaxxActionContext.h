@@ -43,6 +43,8 @@ public:
         creators["anub'rekhan choose target"] = &RaidNaxxActionContext::anubrekhan_choose_target;
         creators["anub'rekhan position"] = &RaidNaxxActionContext::anubrekhan_position;
 
+        creators["faerlina sacrifice worshipper"] = &RaidNaxxActionContext::faerlina_sacrifice_worshipper;
+
         creators["gluth choose target"] = &RaidNaxxActionContext::gluth_choose_target;
         creators["gluth position"] = &RaidNaxxActionContext::gluth_position;
         creators["gluth slowdown"] = &RaidNaxxActionContext::gluth_slowdown;
@@ -87,6 +89,7 @@ private:
     static Action* kelthuzad_position(PlayerbotAI* ai) { return new KelthuzadPositionAction(ai); }
     static Action* anubrekhan_choose_target(PlayerbotAI* ai) { return new AnubrekhanChooseTargetAction(ai); }
     static Action* anubrekhan_position(PlayerbotAI* ai) { return new AnubrekhanPositionAction(ai); }
+    static Action* faerlina_sacrifice_worshipper(PlayerbotAI* ai) { return new FaerlinaSacrificeWorshipperAction(ai); }
     static Action* gluth_choose_target(PlayerbotAI* ai) { return new GluthChooseTargetAction(ai); }
     static Action* gluth_position(PlayerbotAI* ai) { return new GluthPositionAction(ai); }
     static Action* gluth_slowdown(PlayerbotAI* ai) { return new GluthSlowdownAction(ai); }

@@ -8,6 +8,10 @@
 // use src/server/scripts/Northrend/Naxxramas/naxxramas.h for CreatureId, NaxxramasSay, NaxxramasEvent, NaxxramasMisc
 namespace NaxxSpellIds
 {
+    // Grand Widow Faerlina
+    static constexpr uint32 FaerlinaFrenzy = 28798;
+    static constexpr uint32 FaerlinaWidowsEmbrace = 28732;
+
     // Heigan
     static constexpr uint32 Eruption10 = 29371;
 /*

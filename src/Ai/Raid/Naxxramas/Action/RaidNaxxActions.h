@@ -68,6 +68,18 @@ private:
     float distance;
 };
 
+class FaerlinaSacrificeWorshipperAction : public AttackAction
+{
+public:
+    FaerlinaSacrificeWorshipperAction(PlayerbotAI* ai) : AttackAction(ai, "faerlina sacrifice worshipper") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+
+protected:
+    Unit* GetTarget() override;
+};
+
 class HeiganDanceAction : public MovementAction
 {
 public:

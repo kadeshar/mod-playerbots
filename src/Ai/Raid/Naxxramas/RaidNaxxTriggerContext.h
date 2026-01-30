@@ -40,6 +40,7 @@ public:
 
         creators["anub'rekhan"] = &RaidNaxxTriggerContext::anubrekhan;
         creators["faerlina"] = &RaidNaxxTriggerContext::faerlina;
+        creators["faerlina frenzy"] = &RaidNaxxTriggerContext::faerlina_frenzy;
         creators["maexxna"] = &RaidNaxxTriggerContext::maexxna;
         creators["patchwerk tank"] = &RaidNaxxTriggerContext::patchwerk_tank;
         creators["patchwerk non-tank"] = &RaidNaxxTriggerContext::patchwerk_non_tank;
@@ -75,6 +76,7 @@ private:
     static Trigger* kelthuzad(PlayerbotAI* ai) { return new KelthuzadTrigger(ai); }
     static Trigger* anubrekhan(PlayerbotAI* ai) { return new AnubrekhanTrigger(ai); }
     static Trigger* faerlina(PlayerbotAI* ai) { return new FaerlinaTrigger(ai); }
+    static Trigger* faerlina_frenzy(PlayerbotAI* ai) { return new FaerlinaFrenzyTrigger(ai); }	
     static Trigger* maexxna(PlayerbotAI* ai) { return new MaexxnaTrigger(ai); }
     static Trigger* patchwerk_tank(PlayerbotAI* ai) { return new PatchwerkTankTrigger(ai); }
     static Trigger* patchwerk_non_tank(PlayerbotAI* ai) { return new PatchwerkNonTankTrigger(ai); }
