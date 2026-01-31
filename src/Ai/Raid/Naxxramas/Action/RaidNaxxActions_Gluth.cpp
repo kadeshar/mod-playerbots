@@ -55,7 +55,7 @@ bool GluthChooseTargetAction::Execute(Event event)
         for (Unit* t : target_zombies)
         {
             if (t->GetHealthPct() > helper.decimatedZombiePct && t->GetVictim() == target_boss &&
-                t->GetDistance2d(bot) <= sPlayerbotAIConfig->spellDistance)
+                t->GetDistance2d(bot) <= sPlayerbotAIConfig.spellDistance)
             {
                 if (!target || t->GetDistance2d(bot) < target->GetDistance2d(bot))
                 {

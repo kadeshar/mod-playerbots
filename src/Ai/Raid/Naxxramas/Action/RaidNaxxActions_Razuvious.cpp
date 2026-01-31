@@ -127,9 +127,9 @@ bool RazuviousUseObedienceCrystalAction::Execute(Event event)
             }
             if (target)
             {
-                if (bot->GetDistance2d(target) > sPlayerbotAIConfig->spellDistance)
+                if (bot->GetDistance2d(target) > sPlayerbotAIConfig.spellDistance)
                 {
-                    return MoveNear(target, sPlayerbotAIConfig->spellDistance, MovementPriority::MOVEMENT_COMBAT);
+                    return MoveNear(target, sPlayerbotAIConfig.spellDistance, MovementPriority::MOVEMENT_COMBAT);
                 }
                 else
                 {
