@@ -6,6 +6,7 @@
 #include "AttackAction.h"
 #include "GenericSpellActions.h"
 #include "MovementActions.h"
+#include "RaidOnyxiaTriggers.h"
 
 class PlayerbotAI;
 
@@ -53,27 +54,27 @@ private:
 
         switch (spellId)
         {
-            case 17086:  // N to S
-            case 18351:  // S to N
+            case SPELL_BREATH_N_TO_S:  // N to S
+            case SPELL_BREATH_S_TO_N:  // S to N
                 return {SafeZone{Position(-10.0f, -180.0f, z), 5.0f},
                         SafeZone{Position(-20.0f, -250.0f, z), 5.0f}};  // Bottom Safe Zone
 
-            case 18576:  // E to W
-            case 18609:  // W to E
+            case SPELL_BREATH_E_TO_W:  // E to W
+            case SPELL_BREATH_W_TO_E:  // W to E
                 return {
                     SafeZone{Position(20.0f, -210.0f, z), 5.0f},
                     SafeZone{Position(-75.0f, -210.0f, z), 5.0f},
                 };  // Left Safe Zone
 
-            case 18564:  // SE to NW
-            case 18584:  // NW to SE
+            case SPELL_BREATH_SE_TO_NW:  // SE to NW
+            case SPELL_BREATH_NW_TO_SE:  // NW to SE
                 return {
                     SafeZone{Position(-60.0f, -195.0f, z), 5.0f},
                     SafeZone{Position(10.0f, -240.0f, z), 5.0f},
                 };  // NW Safe Zone
 
-            case 18596:  // SW to NE
-            case 18617:  // NE to SW
+            case SPELL_BREATH_SW_TO_NE:  // SW to NE
+            case SPELL_BREATH_NE_TO_SW:  // NE to SW
                 return {
                     SafeZone{Position(7.0f, -185.0f, z), 5.0f},
                     SafeZone{Position(-60.0f, -240.0f, z), 5.0f},
@@ -100,6 +101,63 @@ class OnyxiaAvoidEggsAction : public MovementAction
 {
 public:
     OnyxiaAvoidEggsAction(PlayerbotAI* botAI) : MovementAction(botAI, "ony avoid eggs move") {}
+
+    bool Execute(Event event) override;
+};
+
+class OnyxiaMarkTargetAction : public Action
+{
+public:
+    OnyxiaMarkTargetAction(PlayerbotAI* botAI, std::string const name = "onyxia mark target action")
+        : Action(botAI, name)
+    {
+    }
+
+    bool Execute(Event event) override;
+};
+
+class OnyxiaOnyxianLairGuardCastingAction : public MovementAction
+{
+public:
+    OnyxiaOnyxianLairGuardCastingAction(PlayerbotAI* botAI,
+                                        std::string const name = "onyxia onyxian lair guard casting action")
+        : MovementAction(botAI, name)
+    {
+    }
+
+    bool Execute(Event event) override;
+};
+
+class OnyxiaBackToChamberAction : public MovementAction
+{
+public:
+    OnyxiaBackToChamberAction(PlayerbotAI* botAI, std::string const name = "onyxia back to chamber action")
+        : MovementAction(botAI, name)
+    {
+    }
+
+    bool Execute(Event event) override;
+};
+
+class OnyxiaTankOnyxianLairGuardAction : public MovementAction
+{
+public:
+    OnyxiaTankOnyxianLairGuardAction(PlayerbotAI* botAI,
+                                     std::string const name = "onyxia tank onyxian lair guard action")
+        : MovementAction(botAI, name)
+    {
+    }
+
+    bool Execute(Event event) override;
+};
+
+class OnyxiaHealerForMainTankAction : public MovementAction
+{
+public:
+    OnyxiaHealerForMainTankAction(PlayerbotAI* botAI, std::string const name = "onyxia healer for main tank action")
+        : MovementAction(botAI, name)
+    {
+    }
 
     bool Execute(Event event) override;
 };
