@@ -258,6 +258,43 @@ float KelthuzadGenericMultiplier::GetValue(Action* action)
     {
         return 1.0f;
     }
+
+    bool guardiansPresent = !helper.GetGuardians().empty();
+    bool isOffTankForKT = botAI->IsTank(bot) && !botAI->IsMainTank(bot) &&
+                          (botAI->IsAssistTank(bot) || botAI->HasStrategy("tank assist", BOT_STATE_COMBAT));
+
+    if (dynamic_cast<PetAttackAction*>(action))
+    {
+        Unit* target = AI_VALUE(Unit*, "current target");
+        if (!target)
+            return 0.0f;
+
+        if (!helper.IsWithinRoom(target, KelthuzadBossHelper::ROOM_MAX_RADIUS))
+            return 0.0f;
+
+        if (Unit* pet = bot->GetPet())
+            if (!helper.IsWithinRoom(pet, KelthuzadBossHelper::ROOM_MAX_RADIUS + 2.0f))
+                return 0.0f;
+        if (Unit* guardianPet = bot->GetGuardianPet())
+            if (!helper.IsWithinRoom(guardianPet, KelthuzadBossHelper::ROOM_MAX_RADIUS + 2.0f))
+                return 0.0f;
+
+        return 1.0f;
+    }
+
+    if (helper.IsPhaseTwo() && helper.IsBossCasting(NaxxSpellIds::FrostBoltSingle))
+    {
+        std::string const name = action->getName();
+        if (name == "kick" || name == "pummel" || name == "shield bash" ||
+            name == "mind freeze" || name == "strangulate" ||
+            name == "counterspell" || name == "wind shear" ||
+            name == "spell lock" || name == "silencing shot" ||
+            name == "bash" || name == "hammer of justice")
+        {
+            return 5.0f;
+        }
+    }
+
     if (helper.HasChains(bot))
     {
         if (dynamic_cast<MovementAction*>(action))
@@ -301,8 +338,24 @@ float KelthuzadGenericMultiplier::GetValue(Action* action)
         }
         return 0.0f;
     }
-    if ((dynamic_cast<DpsAssistAction*>(action) || dynamic_cast<TankAssistAction*>(action) ||
-         dynamic_cast<CastDebuffSpellOnAttackerAction*>(action) || dynamic_cast<FleeAction*>(action)))
+
+    if (dynamic_cast<TankAssistAction*>(action))
+    {
+        if (isOffTankForKT && guardiansPresent)
+        {
+            return 2.0f;
+        }
+        return 1.0f;
+    }
+
+    if (isOffTankForKT && guardiansPresent)
+    {
+        if (dynamic_cast<CastDebuffSpellOnAttackerAction*>(action))
+            return 1.0f;
+    }
+
+    if ((dynamic_cast<DpsAssistAction*>(action) || dynamic_cast<FleeAction*>(action) ||
+         dynamic_cast<CastDebuffSpellOnAttackerAction*>(action)))
     {
         return 0.0f;
     }

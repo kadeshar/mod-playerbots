@@ -142,8 +142,12 @@ bool SapphironFlightPositionAction::MoveToNearestIcebolt()
     {
         return false;
     }
-    Player* playerWithIcebolt = nullptr;
-    float minDistance = std::numeric_limits<float>::max();
+    /*Player* playerWithIcebolt = nullptr;
+    float minDistance = std::numeric_limits<float>::max();*/
+    std::vector<Player*> icebolts;
+    icebolts.reserve(5);
+    Player* nearest = nullptr;
+    float nearestDist = std::numeric_limits<float>::max();
     for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
     {
         Player* member = ref->GetSource();
@@ -154,15 +158,43 @@ bool SapphironFlightPositionAction::MoveToNearestIcebolt()
         if (NaxxSpellIds::HasAnyAura(botAI, member, {NaxxSpellIds::Icebolt10, NaxxSpellIds::Icebolt25}) ||
             botAI->HasAura("icebolt", member, false, false, -1, true))
         {
-            if (!playerWithIcebolt || minDistance > bot->GetDistance(member))
+            //if (!playerWithIcebolt || minDistance > bot->GetDistance(member))
+            icebolts.push_back(member);
+            float d = bot->GetDistance(member);
+            if (!nearest || d < nearestDist)
             {
-                playerWithIcebolt = member;
-                minDistance = bot->GetDistance(member);
+                /*playerWithIcebolt = member;
+                minDistance = bot->GetDistance(member);*/
+                nearest = member;
+                nearestDist = d;
             }
         }
     }
-    if (playerWithIcebolt)
+    //if (playerWithIcebolt)
+    if (!icebolts.empty())
     {
+        // In 25-man the core may spawn only 3 iceblocks, so "nearest" can over-stack one block.
+        // Use a stable round-robin assignment by group slot to spread bots across available blocks,
+        // but keep a safety fallback to nearest if the assigned block is too far away.
+        std::sort(icebolts.begin(), icebolts.end(), [](Player* a, Player* b)
+        {
+            return a->GetGUID().GetRawValue() < b->GetGUID().GetRawValue();
+        });
+
+        int32 slotIndex = botAI->GetGroupSlotIndex(bot);
+        Player* assigned = icebolts[std::max<int32>(0, slotIndex) % icebolts.size()];
+        Player* playerWithIcebolt = assigned ? assigned : nearest;
+
+        if (playerWithIcebolt && nearest && playerWithIcebolt != nearest)
+        {
+            float assignedDist = bot->GetDistance(playerWithIcebolt);
+            // If the assignment sends the bot across the room, prefer nearest to reduce LOS failures.
+            if (assignedDist > nearestDist + 20.0f)
+            {
+                playerWithIcebolt = nearest;
+            }
+        }
+
         constexpr float shelterDistance = 9.0f;
         constexpr float shelterEpsilon = 0.35f;
         constexpr float lateralOffset = 1.5f;
@@ -170,7 +202,7 @@ bool SapphironFlightPositionAction::MoveToNearestIcebolt()
         float posX = playerWithIcebolt->GetPositionX() + cos(angle) * shelterDistance;
         float posY = playerWithIcebolt->GetPositionY() + sin(angle) * shelterDistance;
         float posZ = playerWithIcebolt->GetPositionZ();
-        int32 slotIndex = botAI->GetGroupSlotIndex(bot);
+        //int32 slotIndex = botAI->GetGroupSlotIndex(bot);
         float offsetSign = (slotIndex % 2 == 0) ? 1.0f : -1.0f;
         float offsetAngle = angle + (M_PI / 2.0f);
         float offsetX = cos(offsetAngle) * lateralOffset * offsetSign;

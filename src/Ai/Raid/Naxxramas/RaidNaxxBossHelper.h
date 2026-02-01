@@ -1,14 +1,21 @@
 #ifndef _PLAYERBOT_RAIDNAXXBOSSHELPER_H
 #define _PLAYERBOT_RAIDNAXXBOSSHELPER_H
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
 #include <string>
+#include <vector>
 
 #include "AiObject.h"
 #include "AiObjectContext.h"
 #include "EventMap.h"
 #include "Log.h"
+#include "MotionMaster.h"
 #include "NamedObjectContext.h"
 #include "ObjectGuid.h"
+#include "ObjectAccessor.h"
+#include "Pet.h"
 #include "Player.h"
 #include "PlayerbotAI.h"
 #include "Playerbots.h"
@@ -87,9 +94,31 @@ class KelthuzadBossHelper : public AiObject
 {
 public:
     KelthuzadBossHelper(PlayerbotAI* botAI) : AiObject(botAI) {}
+
+    static constexpr uint32 NPC_GUARDIAN_OF_ICECROWN = 16441;
+
+    bool IsGuardian(Unit* unit) const
+    {
+        if (!unit)
+            return false;
+        if (Creature* c = unit->ToCreature())
+            if (c->GetEntry() == NPC_GUARDIAN_OF_ICECROWN)
+                return true;
+        return botAI->EqualLowercaseName(unit->GetName(), "guardian of icecrown");
+    }
+
     const std::pair<float, float> center = {3716.19f, -5106.58f};
     const std::pair<float, float> tank_pos = {3709.19f, -5104.86f};
     const std::pair<float, float> assist_tank_pos = {3746.05f, -5112.74f};
+
+    static constexpr float ROOM_MIN_RADIUS = 6.0f;
+    static constexpr float ROOM_MAX_RADIUS = 24.0f;
+    static constexpr float DETONATE_MIN_RADIUS = 20.0f;
+    static constexpr float DETONATE_MAX_RADIUS = 24.0f;
+    static constexpr float TANK_HOLD_MAX_RADIUS = 20.0f;
+    static constexpr float PHASE1_TANK_MAX_RADIUS = 16.0f;
+    static constexpr float PHASE1_TANK_HOLD_RADIUS = 12.0f;
+
     bool UpdateBossAI()
     {
         if (!bot->IsInCombat())
@@ -108,6 +137,188 @@ public:
     }
     bool IsPhaseOne() { return _unit && _unit->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE); }
     bool IsPhaseTwo() { return _unit && !_unit->HasUnitFlag(UNIT_FLAG_NON_ATTACKABLE); }
+
+    Unit* GetBoss() const { return _unit; }
+
+    bool IsBossCasting(uint32 spellId) const
+    {
+        if (!_unit)
+        {
+            return false;
+        }
+
+        if (Spell* spell = _unit->GetCurrentSpell(CURRENT_GENERIC_SPELL))
+        {
+            if (SpellInfo const* info = spell->GetSpellInfo())
+            {
+                return info->Id == spellId;
+            }
+        }
+        return false;
+    }
+
+    uint32 GetRangedCount() const
+    {
+        Group* group = bot->GetGroup();
+        if (!group)
+        {
+            return 0;
+        }
+
+        uint32 count = 0;
+        for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+        {
+            Player* member = ref->GetSource();
+            if (!member)
+            {
+                continue;
+            }
+
+            if (botAI->IsRanged(member))
+            {
+                ++count;
+            }
+        }
+        return count;
+    }
+
+    void ClampToRoom(float& x, float& y, float minRadius = ROOM_MIN_RADIUS, float maxRadius = ROOM_MAX_RADIUS) const
+    {
+        float dx = x - center.first;
+        float dy = y - center.second;
+        float r2 = dx * dx + dy * dy;
+        if (r2 < 0.0001f)
+        {
+            x = center.first + minRadius;
+            y = center.second;
+            return;
+        }
+
+        float r = std::sqrt(r2);
+        float clamped = std::clamp(r, minRadius, maxRadius);
+        x = center.first + dx / r * clamped;
+        y = center.second + dy / r * clamped;
+    }
+
+    bool IsWithinRoom(WorldObject const* obj, float maxRadius = ROOM_MAX_RADIUS) const
+    {
+        return obj && obj->GetDistance2d(center.first, center.second) <= maxRadius;
+    }
+
+    bool RecallControlledPetsToBot(float leashRadius = (ROOM_MAX_RADIUS + 2.0f), float followDist = 1.5f)
+    {
+        bool recalled = false;
+
+        auto RecallUnit = [&](Unit* u)
+        {
+            if (!u)
+                return;
+
+            Creature* creature = u->ToCreature();
+            if (!creature)
+                return;
+
+            if (creature->IsTotem())
+                return;
+
+            if (creature->GetDistance2d(center.first, center.second) <= leashRadius)
+                return;
+
+            creature->AttackStop();
+
+            if (CharmInfo* charm = creature->GetCharmInfo())
+            {
+                charm->SetIsCommandAttack(false);
+                charm->SetIsAtStay(false);
+                charm->SetIsFollowing(true);
+                charm->SetIsCommandFollow(true);
+                charm->SetIsReturning(false);
+            }
+
+            creature->GetMotionMaster()->MoveFollow(bot, followDist, M_PI);
+            recalled = true;
+        };
+
+        RecallUnit(bot->GetPet());
+
+        for (Unit::ControlSet::const_iterator itr = bot->m_Controlled.begin(); itr != bot->m_Controlled.end(); ++itr)
+        {
+            RecallUnit(*itr);
+        }
+
+        return recalled;
+    }
+
+    std::pair<float, float> GetAssistTankHoldPosition() const
+    {
+        float x = assist_tank_pos.first;
+        float y = assist_tank_pos.second;
+        ClampToRoom(x, y, ROOM_MIN_RADIUS, TANK_HOLD_MAX_RADIUS);
+        return {x, y};
+    }
+
+    std::pair<float, float> GetMainTankHoldPosition() const
+    {
+        float x = tank_pos.first;
+        float y = tank_pos.second;
+        ClampToRoom(x, y, ROOM_MIN_RADIUS, TANK_HOLD_MAX_RADIUS);
+        return {x, y};
+    }
+
+    void ComputeRangedSpreadPosition(uint32 index, uint32 total, float& outX, float& outY) const
+    {
+        if (total == 0)
+        {
+            outX = center.first;
+            outY = center.second;
+            return;
+        }
+
+        float radii[3] = {18.0f, 21.0f, 24.0f};
+        uint32 ringSizes[3] = {0, 0, 0};
+        uint32 rings = 1;
+
+        if (total <= 10)
+        {
+            rings = 1;
+            ringSizes[0] = total;
+        }
+        else if (total <= 18)
+        {
+            rings = 2;
+            ringSizes[0] = (total + 1) / 2;
+            ringSizes[1] = total - ringSizes[0];
+        }
+        else
+        {
+            rings = 3;
+            ringSizes[0] = (total + 2) / 3;
+            ringSizes[1] = (total + 1) / 3;
+            ringSizes[2] = total - ringSizes[0] - ringSizes[1];
+        }
+
+        uint32 ring = 0;
+        uint32 localIndex = index;
+        for (uint32 r = 0; r < rings; ++r)
+        {
+            if (localIndex < ringSizes[r])
+            {
+                ring = r;
+                break;
+            }
+            localIndex -= ringSizes[r];
+        }
+
+        uint32 slots = std::max<uint32>(1, ringSizes[ring]);
+        float angle = 2.0f * float(M_PI) * (float(localIndex) / float(slots));
+
+        angle += float(ring) * (float(M_PI) / 8.0f);
+
+        outX = center.first + std::cos(angle) * radii[ring];
+        outY = center.second + std::sin(angle) * radii[ring];
+        ClampToRoom(outX, outY);
+    }
+
     Player* GetPlayerWithAura(uint32 spellId)
     {
         Group* group = bot->GetGroup();
@@ -146,23 +357,178 @@ public:
         }
         return botAI->HasAura(NaxxSpellIds::ChainsOfKelthuzad, player);
     }
+
+    std::vector<Unit*> GetGuardians() const
+    {
+        std::vector<Unit*> guardians;
+        GuidVector targets = context->GetValue<GuidVector>("possible targets")->Get();
+        for (ObjectGuid const& guid : targets)
+        {
+            Unit* unit = botAI->GetUnit(guid);
+            if (!unit)
+            {
+                continue;
+            }
+
+            if (!IsGuardian(unit))
+            {
+                continue;
+            }
+
+            if (unit->GetDistance2d(center.first, center.second) > (ROOM_MAX_RADIUS + 4.0f))
+            {
+                continue;
+            }
+
+            guardians.push_back(unit);
+        }
+
+        return guardians;
+    }
+
+    bool AllGuardiansOnAssistTank(Player* assistTank) const
+    {
+        if (!assistTank)
+        {
+            return true;
+        }
+
+        std::vector<Unit*> guardians = GetGuardians();
+        if (guardians.empty())
+        {
+            return true;
+        }
+
+        for (Unit* g : guardians)
+        {
+            if (!g)
+            {
+                continue;
+            }
+
+            if (g->GetVictim() != assistTank)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    Unit* GetGuardianToPickup(Player* assistTank) const
+    {
+        if (!assistTank)
+        {
+            return nullptr;
+        }
+
+        std::vector<Unit*> guardians = GetGuardians();
+        if (guardians.empty())
+        {
+            return nullptr;
+        }
+
+        Unit* best = nullptr;
+        float bestDist = std::numeric_limits<float>::max();
+        for (Unit* g : guardians)
+        {
+            if (!g)
+            {
+                continue;
+            }
+
+            if (g->GetVictim() == assistTank)
+            {
+                continue;
+            }
+
+            float d = assistTank->GetDistance2d(g);
+            if (!best || d < bestDist)
+            {
+                best = g;
+                bestDist = d;
+            }
+        }
+        if (!best)
+        {
+            for (Unit* g : guardians)
+            {
+                float d = assistTank->GetDistance2d(g);
+                if (!best || d < bestDist)
+                {
+                    best = g;
+                    bestDist = d;
+                }
+            }
+        }
+
+        return best;
+    }
+
     Unit* GetGuardian()
     {
-        GuidVector attackers = context->GetValue<GuidVector>("attackers")->Get();
-        for (auto i = attackers.begin(); i != attackers.end(); ++i)
+        GuidVector targets = context->GetValue<GuidVector>("possible targets")->Get();
+        for (auto i = targets.begin(); i != targets.end(); ++i)
         {
             Unit* unit = botAI->GetUnit(*i);
             if (!unit)
             {
                 continue;
             }
-            if (botAI->EqualLowercaseName(unit->GetName(), "guardian of icecrown"))
+            if (IsGuardian(unit))
             {
                 return unit;
             }
         }
         return nullptr;
     }
+
+    Unit* GetGuardianForAssistTank(Player* assistTank)
+    {
+        if (!assistTank)
+        {
+            return nullptr;
+        }
+
+        GuidVector targets = context->GetValue<GuidVector>("possible targets")->Get();
+        Unit* best = nullptr;
+        float bestScore = std::numeric_limits<float>::max();
+
+        for (ObjectGuid const& guid : targets)
+        {
+            Unit* unit = botAI->GetUnit(guid);
+            if (!unit)
+            {
+                continue;
+            }
+
+            if (!IsGuardian(unit))
+            {
+                continue;
+            }
+            if (unit->GetDistance2d(center.first, center.second) > (ROOM_MAX_RADIUS + 4.0f))
+            {
+                continue;
+            }
+
+            Player* victimPlayer = unit->GetVictim() ? unit->GetVictim()->ToPlayer() : nullptr;
+            bool victimIsAssistTank = victimPlayer && botAI->IsAssistTank(victimPlayer);
+
+            float score = unit->GetDistance2d(assistTank);
+            if (victimIsAssistTank)
+            {
+                score += 1000.0f;
+            }
+
+            if (!best || score < bestScore)
+            {
+                best = unit;
+                bestScore = score;
+            }
+        }
+
+        return best;
+    }
+
     Unit* GetAnyShadowFissure()
     {
         Unit* shadow_fissure = nullptr;
@@ -308,15 +674,26 @@ public:
         Aura* aura = NaxxSpellIds::GetAnyAura(bot, {NaxxSpellIds::Chill25});
         if (!aura)
         {
-            // Fallback to name for custom spell data.
             aura = botAI->GetAura("chill", bot);
         }
         if (!aura)
         {
             return false;
         }
-        DynamicObject* dyn_obj = aura->GetDynobjOwner();
-        if (!dyn_obj)
+        /*DynamicObject* dyn_obj = aura->GetDynobjOwner();
+        if (!dyn_obj)*/
+        // Prefer the dynobject (classic ground effect), but keep a fallback for cases where
+        // the aura is applied by a moving caster (e.g. Blizzard NPC) without a dynobject.
+        WorldObject* source = aura->GetDynobjOwner();
+        if (!source)
+        {
+            //return false;
+            if (Unit* caster = ObjectAccessor::GetUnit(*bot, aura->GetCasterGUID()))
+            {
+                source = caster;
+            }
+        }
+        if (!source)
         {
             return false;
         }
@@ -329,7 +706,7 @@ public:
             {
                 if (bot->GetExactDist2d(currentTarget) <= 45.0f)
                 {
-                    angle = bot->GetAngle(dyn_obj) - M_PI + (rand_norm() - 0.5) * M_PI / 2;
+                    angle = bot->GetAngle(source) - M_PI + (rand_norm() - 0.5) * M_PI / 2;
                 }
                 else
                 {
@@ -361,7 +738,7 @@ public:
         }
         else
         {
-            angle = bot->GetAngle(dyn_obj) - M_PI + (rand_norm() - 0.5) * M_PI / 2;
+            angle = bot->GetAngle(source) - M_PI + (rand_norm() - 0.5) * M_PI / 2;
         }
         dest = {bot->GetPositionX() + cos(angle) * 5.0f, bot->GetPositionY() + sin(angle) * 5.0f, bot->GetPositionZ()};
         return true;
@@ -510,7 +887,7 @@ public:
         {
             return true;
         }
-        // Fallback to name for custom spell data.
+
         return info->SpellName[LOCALE_enUS] && botAI->EqualLowercaseName(info->SpellName[LOCALE_enUS], "decimate");
     }
     bool JustStartCombat() const { return _combat_start_ms != 0 && getMSTime() - _combat_start_ms < 10000; }
@@ -593,7 +970,6 @@ public:
                 bool isBlink = NaxxSpellIds::MatchesAnySpellId(info, {NaxxSpellIds::Blink});
                 if (!isBlink && info && info->SpellName[LOCALE_enUS])
                 {
-                    // Fallback to name for custom spell data.
                     isBlink = botAI->EqualLowercaseName(info->SpellName[LOCALE_enUS], "blink");
                 }
                 if (isBlink)

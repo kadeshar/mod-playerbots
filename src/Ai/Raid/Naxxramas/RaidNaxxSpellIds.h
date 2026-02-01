@@ -82,7 +82,8 @@ namespace NaxxSpellIds
     // Sapphiron
     static constexpr uint32 Icebolt10 = 28522;
     static constexpr uint32 Icebolt25 = 28526;
-    static constexpr uint32 Chill25 = 55699;
+    //static constexpr uint32 Chill25 = 55699;
+    static constexpr uint32 Chill25 = 28547;
     static constexpr uint32 LifeDrain = 28542;
     static constexpr uint32 FrostMissile = 30101;
     static constexpr uint32 FrostExplosion = 28524;
@@ -91,6 +92,9 @@ namespace NaxxSpellIds
     static constexpr uint32 FrostBlast = 27808;
     static constexpr uint32 DetonateMana = 27819;
     static constexpr uint32 ChainsOfKelthuzad = 28410;
+    static constexpr uint32 ShadowFissure = 27810;
+    static constexpr uint32 FrostBoltSingle = 28478;
+    static constexpr uint32 FrostBoltMulti = 28479;
 
     // Gluth
     static constexpr uint32 Decimate10 = 28374;
