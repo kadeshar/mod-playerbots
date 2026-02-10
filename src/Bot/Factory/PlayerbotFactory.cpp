@@ -4077,41 +4077,42 @@ void PlayerbotFactory::InitArenaTeam()
     // A manual reinitalization (.playerbots rndbot init) is also required after the teams have been deleted.
 
     // Use try_lock to avoid blocking if another thread is already creating teams
-    std::unique_lock<std::mutex> lock(arenaTeamCreationMutex, std::try_to_lock);
-    if (!lock.owns_lock())
-        return;
-
-    if (sPlayerbotAIConfig.randomBotArenaTeams.empty())
+    // Only create teams once, but allow all bots to join teams
     {
-        if (sPlayerbotAIConfig.deleteRandomBotArenaTeams)
+        std::unique_lock<std::mutex> lock(arenaTeamCreationMutex, std::try_to_lock);
+        if (lock.owns_lock() && sPlayerbotAIConfig.randomBotArenaTeams.empty())
         {
-            LOG_INFO("playerbots", "Deleting random bot arena teams...");
-
-            for (auto it = sArenaTeamMgr->GetArenaTeams().begin(); it != sArenaTeamMgr->GetArenaTeams().end(); ++it)
+            if (sPlayerbotAIConfig.deleteRandomBotArenaTeams)
             {
-                ArenaTeam* arenateam = it->second;
-                if (arenateam->GetCaptain() && arenateam->GetCaptain().IsPlayer())
+                LOG_INFO("playerbots", "Deleting random bot arena teams...");
+
+                for (auto it = sArenaTeamMgr->GetArenaTeams().begin(); it != sArenaTeamMgr->GetArenaTeams().end(); ++it)
                 {
-                    Player* bot = ObjectAccessor::FindPlayer(arenateam->GetCaptain());
-                    PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
-                    if (!botAI || botAI->IsRealPlayer())
+                    ArenaTeam* arenateam = it->second;
+                    if (arenateam->GetCaptain() && arenateam->GetCaptain().IsPlayer())
                     {
-                        continue;
-                    }
-                    else
-                    {
-                        arenateam->Disband(nullptr);
+                        Player* bot = ObjectAccessor::FindPlayer(arenateam->GetCaptain());
+                        PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
+                        if (!botAI || botAI->IsRealPlayer())
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            arenateam->Disband(nullptr);
+                        }
                     }
                 }
+
+                LOG_INFO("playerbots", "Random bot arena teams deleted");
             }
 
-            LOG_INFO("playerbots", "Random bot arena teams deleted");
+            RandomPlayerbotFactory::CreateRandomArenaTeams(ARENA_TYPE_2v2, sPlayerbotAIConfig.randomBotArenaTeam2v2Count);
+            RandomPlayerbotFactory::CreateRandomArenaTeams(ARENA_TYPE_3v3, sPlayerbotAIConfig.randomBotArenaTeam3v3Count);
+            RandomPlayerbotFactory::CreateRandomArenaTeams(ARENA_TYPE_5v5, sPlayerbotAIConfig.randomBotArenaTeam5v5Count);
         }
-
-        RandomPlayerbotFactory::CreateRandomArenaTeams(ARENA_TYPE_2v2, sPlayerbotAIConfig.randomBotArenaTeam2v2Count);
-        RandomPlayerbotFactory::CreateRandomArenaTeams(ARENA_TYPE_3v3, sPlayerbotAIConfig.randomBotArenaTeam3v3Count);
-        RandomPlayerbotFactory::CreateRandomArenaTeams(ARENA_TYPE_5v5, sPlayerbotAIConfig.randomBotArenaTeam5v5Count);
     }
+    // Lock is released here, allowing other threads to proceed with joining teams
 
     std::vector<uint32> arenateams;
     for (std::vector<uint32>::iterator i = sPlayerbotAIConfig.randomBotArenaTeams.begin();
