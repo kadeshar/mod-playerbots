@@ -7,6 +7,7 @@
 
 #include <random>
 #include <utility>
+#include <mutex>
 
 #include "AccountMgr.h"
 #include "AiFactory.h"
@@ -46,7 +47,7 @@
 const uint64 diveMask = (1LL << 7) | (1LL << 44) | (1LL << 37) | (1LL << 38) | (1LL << 26) | (1LL << 30) | (1LL << 27) |
                         (1LL << 33) | (1LL << 24) | (1LL << 34);
 
-static bool arenaTeamsBeingCreated = false;
+static std::mutex arenaTeamCreationMutex;
 
 static std::vector<uint32> initSlotsOrder = {EQUIPMENT_SLOT_TRINKET1, EQUIPMENT_SLOT_TRINKET2, EQUIPMENT_SLOT_MAINHAND,
     EQUIPMENT_SLOT_OFFHAND, EQUIPMENT_SLOT_RANGED, EQUIPMENT_SLOT_HEAD, EQUIPMENT_SLOT_SHOULDERS, EQUIPMENT_SLOT_CHEST,
@@ -4075,14 +4076,13 @@ void PlayerbotFactory::InitArenaTeam()
     // This is because randomBotArenaTeams is only empty on server restart.
     // A manual reinitalization (.playerbots rndbot init) is also required after the teams have been deleted.
 
-    // Wait if another thread is currently creating arena teams
-    if (arenaTeamsBeingCreated)
+    // Use try_lock to avoid blocking if another thread is already creating teams
+    std::unique_lock<std::mutex> lock(arenaTeamCreationMutex, std::try_to_lock);
+    if (!lock.owns_lock())
         return;
 
-    if (sPlayerbotAIConfig.randomBotArenaTeams.empty() && !arenaTeamsBeingCreated)
+    if (sPlayerbotAIConfig.randomBotArenaTeams.empty())
     {
-        arenaTeamsBeingCreated = true;
-
         if (sPlayerbotAIConfig.deleteRandomBotArenaTeams)
         {
             LOG_INFO("playerbots", "Deleting random bot arena teams...");
@@ -4111,8 +4111,6 @@ void PlayerbotFactory::InitArenaTeam()
         RandomPlayerbotFactory::CreateRandomArenaTeams(ARENA_TYPE_2v2, sPlayerbotAIConfig.randomBotArenaTeam2v2Count);
         RandomPlayerbotFactory::CreateRandomArenaTeams(ARENA_TYPE_3v3, sPlayerbotAIConfig.randomBotArenaTeam3v3Count);
         RandomPlayerbotFactory::CreateRandomArenaTeams(ARENA_TYPE_5v5, sPlayerbotAIConfig.randomBotArenaTeam5v5Count);
-
-        arenaTeamsBeingCreated = false;
     }
 
     std::vector<uint32> arenateams;
