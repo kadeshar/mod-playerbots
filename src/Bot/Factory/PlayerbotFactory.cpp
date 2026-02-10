@@ -46,6 +46,8 @@
 const uint64 diveMask = (1LL << 7) | (1LL << 44) | (1LL << 37) | (1LL << 38) | (1LL << 26) | (1LL << 30) | (1LL << 27) |
                         (1LL << 33) | (1LL << 24) | (1LL << 34);
 
+static bool arenaTeamsBeingCreated = false;
+
 static std::vector<uint32> initSlotsOrder = {EQUIPMENT_SLOT_TRINKET1, EQUIPMENT_SLOT_TRINKET2, EQUIPMENT_SLOT_MAINHAND,
     EQUIPMENT_SLOT_OFFHAND, EQUIPMENT_SLOT_RANGED, EQUIPMENT_SLOT_HEAD, EQUIPMENT_SLOT_SHOULDERS, EQUIPMENT_SLOT_CHEST,
     EQUIPMENT_SLOT_LEGS, EQUIPMENT_SLOT_HANDS, EQUIPMENT_SLOT_NECK, EQUIPMENT_SLOT_BODY, EQUIPMENT_SLOT_WAIST,
@@ -4072,8 +4074,15 @@ void PlayerbotFactory::InitArenaTeam()
     // Currently the teams are only remade after a server restart and if deleteRandomBotArenaTeams = 1
     // This is because randomBotArenaTeams is only empty on server restart.
     // A manual reinitalization (.playerbots rndbot init) is also required after the teams have been deleted.
-    if (sPlayerbotAIConfig.randomBotArenaTeams.empty())
+
+    // Wait if another thread is currently creating arena teams
+    if (arenaTeamsBeingCreated)
+        return;
+
+    if (sPlayerbotAIConfig.randomBotArenaTeams.empty() && !arenaTeamsBeingCreated)
     {
+        arenaTeamsBeingCreated = true;
+
         if (sPlayerbotAIConfig.deleteRandomBotArenaTeams)
         {
             LOG_INFO("playerbots", "Deleting random bot arena teams...");
@@ -4102,6 +4111,8 @@ void PlayerbotFactory::InitArenaTeam()
         RandomPlayerbotFactory::CreateRandomArenaTeams(ARENA_TYPE_2v2, sPlayerbotAIConfig.randomBotArenaTeam2v2Count);
         RandomPlayerbotFactory::CreateRandomArenaTeams(ARENA_TYPE_3v3, sPlayerbotAIConfig.randomBotArenaTeam3v3Count);
         RandomPlayerbotFactory::CreateRandomArenaTeams(ARENA_TYPE_5v5, sPlayerbotAIConfig.randomBotArenaTeam5v5Count);
+
+        arenaTeamsBeingCreated = false;
     }
 
     std::vector<uint32> arenateams;
