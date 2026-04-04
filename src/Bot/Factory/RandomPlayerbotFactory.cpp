@@ -8,17 +8,13 @@
 #include "AccountMgr.h"
 #include "ArenaTeamMgr.h"
 #include "DatabaseEnv.h"
-#include "GuildMgr.h"
-#include "PlayerbotFactory.h"
-#include "Playerbots.h"
-#include "PlayerbotGuildMgr.h"
+#include "PlayerbotAI.h"
+#include "RaceMgr.h"
 #include "ScriptMgr.h"
 #include "SharedDefines.h"
 #include "SocialMgr.h"
 #include "Timer.h"
-#include "Guild.h"            // EmblemInfo::SaveToDB
 #include "Log.h"
-#include "GuildMgr.h"
 
 constexpr RandomPlayerbotFactory::NameRaceAndGender RandomPlayerbotFactory::CombineRaceAndGender(uint8 race,
                                                                                                 uint8 gender)
@@ -65,7 +61,7 @@ Player* RandomPlayerbotFactory::CreateRandomBot(WorldSession* session, uint8 cls
     const bool alliance = static_cast<bool>(urand(0, 1));
 
     std::vector<uint8> raceOptions;
-    for (uint8 race = RACE_HUMAN; race < MAX_RACES; ++race)
+    for (uint8 race = RACE_HUMAN; race < sRaceMgr->GetMaxRaces(); ++race)
     {
         // skip disabled with config races
         if ((1 << (race - 1)) & sWorld->getIntConfig(CONFIG_CHARACTER_CREATING_DISABLED_RACEMASK))
@@ -277,7 +273,7 @@ std::string const RandomPlayerbotFactory::CreateRandomBotName(NameRaceAndGender 
             botName.clear();
             continue;
         }
-        return std::move(botName);
+        return botName;
     }
 
     // TRUE RANDOM NAME GENERATION
@@ -302,11 +298,11 @@ std::string const RandomPlayerbotFactory::CreateRandomBotName(NameRaceAndGender 
             botName.clear();
             continue;
         }
-        return std::move(botName);
+        return botName;
     }
     LOG_ERROR("playerbots", "Random name generation failed.");
     botName.clear();
-    return std::move(botName);
+    return botName;
 }
 
 // Calculates the total number of required accounts, either using the specified randomBotAccountCount
@@ -763,7 +759,7 @@ std::string const RandomPlayerbotFactory::CreateRandomGuildName()
     if (!result)
     {
         LOG_ERROR("playerbots", "No more names left for random guilds");
-        return std::move(guildName);
+        return guildName;
     }
 
     Field* fields = result->Fetch();
@@ -777,13 +773,13 @@ std::string const RandomPlayerbotFactory::CreateRandomGuildName()
     if (!result)
     {
         LOG_ERROR("playerbots", "No more names left for random guilds");
-        return std::move(guildName);
+        return guildName;
     }
 
     fields = result->Fetch();
     guildName = fields[0].Get<std::string>();
 
-    return std::move(guildName);
+    return guildName;
 }
 
 void RandomPlayerbotFactory::CreateRandomArenaTeams(ArenaType type, uint32 count)
@@ -905,7 +901,7 @@ std::string const RandomPlayerbotFactory::CreateRandomArenaTeamName()
     if (!result)
     {
         LOG_ERROR("playerbots", "No more names left for random arena teams");
-        return std::move(arenaTeamName);
+        return arenaTeamName;
     }
 
     Field* fields = result->Fetch();
@@ -920,11 +916,11 @@ std::string const RandomPlayerbotFactory::CreateRandomArenaTeamName()
     if (!result)
     {
         LOG_ERROR("playerbots", "No more names left for random arena teams");
-        return std::move(arenaTeamName);
+        return arenaTeamName;
     }
 
     fields = result->Fetch();
     arenaTeamName = fields[0].Get<std::string>();
 
-    return std::move(arenaTeamName);
+    return arenaTeamName;
 }

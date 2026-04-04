@@ -5,12 +5,17 @@
 
 #include "EnemyPlayerValue.h"
 
+#include "CombatManager.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
 #include "Vehicle.h"
 
 bool NearestEnemyPlayersValue::AcceptUnit(Unit* unit)
 {
+    // Apply parent's filtering first (includes level difference checks)
+    if (!PossibleTargetsValue::AcceptUnit(unit))
+        return false;
+
     bool inCannon = botAI->IsInVehicle(false, true);
     Player* enemy = dynamic_cast<Player*>(unit);
     if (enemy && botAI->IsOpposing(enemy) && enemy->IsPvP() &&
@@ -19,7 +24,14 @@ bool NearestEnemyPlayersValue::AcceptUnit(Unit* unit)
         ((inCannon || !enemy->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE))) &&
         /*!enemy->HasStealthAura() && !enemy->HasInvisibilityAura()*/ enemy->CanSeeOrDetect(bot) &&
         !(enemy->HasSpiritOfRedemptionAura()))
+    {
+        // If with master, only attack if master is PvP flagged
+        Player* master = botAI->GetMaster();
+        if (master && !master->IsPvP() && !master->IsFFAPvP())
+            return false;
+
         return true;
+    }
 
     return false;
 }
@@ -40,34 +52,21 @@ Unit* EnemyPlayerValue::Calculate()
             controllingVehicle = true;
     }
 
-    // 1. Check units we are currently in combat with.
+    // 1. Check units we are currently in PvP combat with.
     std::vector<Unit*> targets;
     Unit* pVictim = bot->GetVictim();
-    HostileReference* pReference = bot->getHostileRefMgr().getFirst();
-    while (pReference)
+    for (auto const& [guid, combatRef] : bot->GetCombatManager().GetPvPCombatRefs())
     {
-        ThreatMgr* threatMgr = pReference->GetSource();
-        if (Unit* pTarget = threatMgr->GetOwner())
-        {
-            if (pTarget != pVictim && pTarget->IsPlayer() && pTarget->CanSeeOrDetect(bot) &&
-                bot->IsWithinDist(pTarget, VISIBILITY_DISTANCE_NORMAL))
-            {
-                if (bot->GetTeamId() == TEAM_HORDE)
-                {
-                    if (pTarget->HasAura(23333))
-                        return pTarget;
-                }
-                else
-                {
-                    if (pTarget->HasAura(23335))
-                        return pTarget;
-                }
+        Unit* pTarget = combatRef->GetOther(bot);
+        if (!pTarget || pTarget == pVictim || !pTarget->IsPlayer() || !pTarget->CanSeeOrDetect(bot) ||
+            !bot->IsWithinDist(pTarget, VISIBILITY_DISTANCE_NORMAL))
+            continue;
 
-                targets.push_back(pTarget);
-            }
-        }
+        if ((bot->GetTeamId() == TEAM_HORDE && pTarget->HasAura(23333)) ||
+            (bot->GetTeamId() == TEAM_ALLIANCE && pTarget->HasAura(23335)))
+            return pTarget;
 
-        pReference = pReference->next();
+        targets.push_back(pTarget);
     }
 
     if (!targets.empty())

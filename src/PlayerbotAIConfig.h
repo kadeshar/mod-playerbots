@@ -42,21 +42,20 @@ enum class HealingManaEfficiency : uint8
 
 enum NewRpgStatus : int
 {
-    RPG_STATUS_START = 0,
-    // Going to far away place
-    RPG_GO_GRIND = 0,
-    RPG_GO_CAMP = 1,
+    //Initial Status
+    RPG_IDLE = 0,
+    RPG_GO_GRIND = 1,
+    RPG_GO_CAMP = 2,
     // Exploring nearby
-    RPG_WANDER_RANDOM = 2,
-    RPG_WANDER_NPC = 3,
+    RPG_WANDER_RANDOM = 3,
+    RPG_WANDER_NPC = 4,
     // Do Quest (based on quest status)
-    RPG_DO_QUEST = 4,
+    RPG_DO_QUEST = 5,
     // Travel
-    RPG_TRAVEL_FLIGHT = 5,
+
+    RPG_TRAVEL_FLIGHT = 6,
     // Taking a break
-    RPG_REST = 6,
-    // Initial status
-    RPG_IDLE = 7,
+    RPG_REST = 7,
     RPG_STATUS_END = 8
 };
 
@@ -99,6 +98,8 @@ public:
     std::set<uint32> aoeAvoidSpellWhitelist;
     bool tellWhenAvoidAoe;
     std::set<uint32> disallowedGameObjects;
+    std::set<uint32> attunementQuests;
+    std::set<uint32> unobtainableItems;
 
     uint32 openGoSpell;
     bool randomBotAutologin;
@@ -345,7 +346,10 @@ public:
     uint32 botActiveAloneSmartScaleWhenMaxLevel;
 
     bool freeMethodLoot;
-    int32 lootRollLevel;
+    int32 lootNeedRollLevel;
+    bool lootGreedRollLevel;
+    bool lootRollRecipe;
+    bool lootRollDisenchant;
     std::string autoPickReward;
     bool autoEquipUpgradeLoot;
     float equipUpgradeThreshold;
@@ -353,7 +357,7 @@ public:
     bool syncQuestWithPlayer;
     bool syncQuestForPlayer;
     bool dropObsoleteQuests;
-    std::string autoTrainSpells;
+    bool allowLearnTrainerSpells;
     bool autoPickTalents;
     bool autoUpgradeEquip;
     int32 hunterWolfPet;
@@ -424,10 +428,10 @@ public:
     uint32 useFastFlyMountAtMinLevel;
 
     // stagger flightpath takeoff
-    uint32 delayMin;
-    uint32 delayMax;
-    uint32 gapMs;
-    uint32 gapJitterMs;
+    uint32 botTaxiDelayMin;
+    uint32 botTaxiDelayMax;
+    uint32 botTaxiGapMs;
+    uint32 botTaxiGapJitterMs;
 
     std::string const GetTimestampStr();
     bool hasLog(std::string const fileName)
