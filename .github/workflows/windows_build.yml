@@ -20,30 +20,34 @@ jobs:
     env:
       BOOST_ROOT: C:\local\boost_1_82_0
     steps:
+      - name: Setup Short Paths
+        shell: bash
+        run: |
+          git config --global core.longpaths true
       - name: Checkout AzerothCore
         uses: actions/checkout@v3
         with:
           repository: 'mod-playerbots/azerothcore-wotlk'
           ref: ${{ (github.base_ref || github.ref_name) == 'test-staging' && 'test-staging' || 'Playerbot' }}
-          path: 'ac'
+          path: 'e'
       - name: Checkout Playerbot Module
         uses: actions/checkout@v3
         with:
           repository: 'mod-playerbots/mod-playerbots'
           #path: 'modules/mod-playerbots'
-          path: ac/modules/mod-playerbots
+          path: e/modules/mod-playerbots
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.13
       - name: Configure OS
         shell: bash
-        working-directory: ac
+        working-directory: e
         env:
           CONTINUOUS_INTEGRATION: true
         run: |
           ./acore.sh install-deps
       - name: Build
         shell: bash
-        working-directory: ac
+        working-directory: e
         run: |
           export CTOOLS_BUILD=all
           ./acore.sh compiler build
