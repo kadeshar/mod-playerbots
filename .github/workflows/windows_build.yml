@@ -20,7 +20,7 @@ jobs:
     env:
       BOOST_ROOT: C:\local\boost_1_82_0
     steps:
-      - name: Setup Short Paths
+      - name: Setup Long Paths
         shell: bash
         run: |
           git config --global core.longpaths true
