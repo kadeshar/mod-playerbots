@@ -128,6 +128,8 @@ public:
     bool incrementalGearInit;
     int32 randomGearQualityLimit;
     int32 randomGearScoreLimit;
+    bool preferClassArmorType;
+    bool preferredSpecWeapons;
     float randomBotMinLevelChance, randomBotMaxLevelChance;
     float randomBotRpgChance;
     uint32 minRandomBots, maxRandomBots;
@@ -152,6 +154,7 @@ public:
 
     // Professions
     bool enableFishingWithMaster;
+    uint32 classMatchingProfessionChance;
     float fishingDistanceFromMaster, fishingDistance, endFishingWithMaster;
 
     // chat
@@ -303,6 +306,7 @@ public:
     uint32 iterationsPerTick;
 
     std::mutex m_logMtx;
+    bool enableAutoTradeOnItemMention;
     std::vector<std::string> tradeActionExcludedPrefixes;
     std::vector<std::string> allowedLogFiles;
     std::unordered_map<std::string, std::pair<FILE*, bool>> logFiles;
@@ -423,6 +427,7 @@ public:
             altMaintenanceKeyring,
             altMaintenanceGemsEnchants;
     int32 autoGearCommand, autoGearCommandAltBots, autoGearQualityLimit, autoGearScoreLimit;
+    int32 autoGearBisCommand;
 
     uint32 useGroundMountAtMinLevel;
     uint32 useFastGroundMountAtMinLevel;

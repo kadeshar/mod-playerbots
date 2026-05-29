@@ -690,13 +690,11 @@ float LadyVashjCorePassersPrioritizePositioningMultiplier::GetValue(Action* acti
     auto coreHandlers = GetCoreHandlers(botAI, bot);
 
     bool isCoreHandler = false;
-    int myIndex = -1;
     for (int i = 0; i < static_cast<int>(coreHandlers.size()); ++i)
     {
         if (coreHandlers[i] && coreHandlers[i] == bot)
         {
             isCoreHandler = true;
-            myIndex = i;
         }
     }
     if (!isCoreHandler)
@@ -754,7 +752,7 @@ float LadyVashjDisableAutomaticTargetingAndMovementModifier::GetValue(Action *ac
             return 0.0f;
 
         Unit* enchanted = AI_VALUE2(Unit*, "find target", "enchanted elemental");
-        if (enchanted && bot->GetVictim() == enchanted &&
+        if (enchanted && AI_VALUE(Unit*, "current target") == enchanted &&
             dynamic_cast<CastDebuffSpellOnAttackerAction*>(action))
             return 0.0f;
     }
@@ -774,7 +772,7 @@ float LadyVashjDisableAutomaticTargetingAndMovementModifier::GetValue(Action *ac
                 dynamic_cast<FleeAction*>(action))
                 return 0.0f;
 
-            if (enchanted && bot->GetVictim() == enchanted &&
+            if (enchanted && AI_VALUE(Unit*, "current target") == enchanted &&
                 dynamic_cast<CastDebuffSpellOnAttackerAction*>(action))
                 return 0.0f;
         }

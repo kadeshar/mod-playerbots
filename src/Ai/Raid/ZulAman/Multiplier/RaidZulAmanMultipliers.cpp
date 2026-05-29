@@ -157,7 +157,7 @@ float JanalaiStayAwayFromFireBombsMultiplier::GetValue(Action* action)
     if (!AI_VALUE2(Unit*, "find target", "jan'alai"))
         return 1.0f;
 
-    if (!HasFireBombNearby(botAI, bot))
+    if (!HasFireBombNearby(bot))
         return 1.0f;
 
     if (dynamic_cast<CastReachTargetSpellAction*>(action) ||
@@ -267,7 +267,7 @@ float HexLordMalacrassStopAttackingDuringSpellReflectionMultiplier::GetValue(Act
         return 1.0f;
 
     if (castSpellAction->getThreatType() == Action::ActionThreatType::Aoe ||
-        (bot->GetVictim() == malacrass &&
+        (AI_VALUE(Unit*, "current target") == malacrass &&
          castSpellAction->getThreatType() == Action::ActionThreatType::Single))
         return 0.0f;
 

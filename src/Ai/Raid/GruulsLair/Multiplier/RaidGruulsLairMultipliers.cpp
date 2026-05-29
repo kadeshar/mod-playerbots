@@ -15,6 +15,9 @@ using namespace GruulsLairHelpers;
 
 float HighKingMaulgarDisableTankAssistMultiplier::GetValue(Action* action)
 {
+    if (bot->GetVictim() == nullptr)
+        return 1.0f;
+
     if (IsAnyOgreBossAlive(botAI) && dynamic_cast<TankAssistAction*>(action))
         return 0.0f;
 
@@ -46,9 +49,8 @@ float HighKingMaulgarAvoidWhirlwindMultiplier::GetValue(Action* action)
 float HighKingMaulgarDisableArcaneShotOnKroshMultiplier::GetValue(Action* action)
 {
     Unit* krosh = AI_VALUE2(Unit*, "find target", "krosh firehand");
-    Unit* target = AI_VALUE(Unit*, "current target");
 
-    if (krosh && target && target->GetGUID() == krosh->GetGUID() &&
+    if (krosh && AI_VALUE(Unit*, "current target") == krosh &&
         dynamic_cast<CastArcaneShotAction*>(action))
         return 0.0f;
 
@@ -57,7 +59,7 @@ float HighKingMaulgarDisableArcaneShotOnKroshMultiplier::GetValue(Action* action
 
 float HighKingMaulgarDisableMageTankAOEMultiplier::GetValue(Action* action)
 {
-    if (IsKroshMageTank(botAI, bot) &&
+    if (IsKroshMageTank(bot) &&
         (dynamic_cast<CastFrostNovaAction*>(action) || dynamic_cast<CastBlizzardAction*>(action) ||
         dynamic_cast<CastConeOfColdAction*>(action) || dynamic_cast<CastFlamestrikeAction*>(action) ||
         dynamic_cast<CastDragonsBreathAction*>(action) || dynamic_cast<CastBlastWaveAction*>(action)))
