@@ -157,6 +157,16 @@ VALUES
      'Aplicando equipo BiS.',
      'Aplicando equipo BiS.',
      'Применяю BiS-снаряжение.'),
+	 
+	 (1779, 'bis_applying_msg', 'Applying BiS gear', 0, 0,
+     'BiS 장비를 적용합니다.',
+     'Application de l''équipement BiS.',
+     'Wende BiS-Ausrüstung an.',
+     '正在装备BiS装备。',
+     '正在裝備BiS裝備。',
+     'Aplicando equipo BiS.',
+     'Aplicando equipo BiS.',
+     'Применяю BiS-снаряжение.'),
 
     (1778, 'bis_applied_msg', 'BiS applied', 0, 0,
      'BiS 장비가 적용되었습니다.',
