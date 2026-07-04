@@ -177,6 +177,22 @@ VALUES
      'Equipo BiS aplicado.',
      'Equipo BiS aplicado.',
      'BiS-снаряжение применено.');
+	 
+INSERT INTO `ai_playerbot_texts`
+    (`id`, `name`, `text`, `say_type`, `reply_type`,
+     `text_loc1`, `text_loc2`, `text_loc3`, `text_loc4`,
+     `text_loc5`, `text_loc6`, `text_loc7`, `text_loc8`)
+VALUES
+    (1767, 'bis_autogear_unavailable_error',
+     'autogear command is not allowed, please check the configuration.', 0, 0,
+     '자동 장비 명령이 허용되지 않습니다. 설정을 확인하세요.',
+     'La commande autogear n''est pas autorisée, veuillez vérifier la configuration.',
+     'Der autogear-Befehl ist nicht erlaubt, bitte überprüfe die Konfiguration.',
+     '自动装备命令未启用，请检查配置。',
+     '自動裝備指令未啟用，請檢查設定。',
+     'El comando autogear no está permitido, por favor revisa la configuración.',
+     'El comando autogear no está permitido, por favor revisa la configuración.',
+     'Команда autogear не разрешена, проверьте конфигурацию.');
 
 INSERT INTO ai_playerbot_texts_chance (name, probability) VALUES
     ('bis_autogear_unavailable_error', 100),
