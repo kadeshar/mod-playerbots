@@ -1,13 +1,14 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
- * and/or modify it under version 3 of the License, or (at your option), any later version.
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
  */
 
 #include "WorldPacketHandlerStrategy.h"
 
 void WorldPacketHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
-    PassTroughStrategy::InitTriggers(triggers);
+    PassThroughStrategy::InitTriggers(triggers);
 
     triggers.push_back(
         new TriggerNode("group invite", { NextAction("accept invitation", relevance) }));
@@ -16,7 +17,7 @@ void WorldPacketHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
     triggers.push_back(
         new TriggerNode("uninvite guid", { NextAction("uninvite", relevance) }));
     triggers.push_back(
-        new TriggerNode("group set leader", { /*NextAction("leader", relevance),*/ }));
+        new TriggerNode("group set leader", { NextAction("reset botAI", relevance) }));
     triggers.push_back(new TriggerNode(
         "not enough money", { NextAction("tell not enough money", relevance) }));
     triggers.push_back(
@@ -71,7 +72,7 @@ void WorldPacketHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
     triggers.push_back(new TriggerNode("very often", { NextAction("loot roll", relevance) }));
 }
 
-WorldPacketHandlerStrategy::WorldPacketHandlerStrategy(PlayerbotAI* botAI) : PassTroughStrategy(botAI)
+WorldPacketHandlerStrategy::WorldPacketHandlerStrategy(PlayerbotAI* botAI) : PassThroughStrategy(botAI)
 {
     supported.push_back("loot roll");
     supported.push_back("check mount state");

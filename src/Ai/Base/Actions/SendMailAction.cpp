@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
- * and/or modify it under version 3 of the License, or (at your option), any later version.
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
  */
 
 #include "SendMailAction.h"
@@ -34,23 +35,22 @@ bool SendMailAction::Execute(Event event)
     Player* receiver = GetMaster();
     Player* tellTo = receiver;
 
-    std::vector<std::string> ss = split(text, ' ');
-    if (ss.size() > 1)
-    {
-        if (Player* p = ObjectAccessor::FindPlayer(ObjectGuid(uint64(ss[ss.size() - 1].c_str()))))
-            receiver = p;
-    }
-
     if (!receiver)
         receiver = event.getOwner();
 
     if (!receiver || receiver == bot)
-    {
         return false;
-    }
 
     if (!tellTo)
         tellTo = receiver;
+
+    if (!sPlayerbotAIConfig.botSendMailEnabled)
+    {
+        bot->Whisper(PlayerbotTextMgr::instance().GetBotTextOrDefault(
+                         "send_mail_disabled", "I cannot send mail", {}),
+                     LANG_UNIVERSAL, tellTo);
+        return false;
+    }
 
     if (!mailboxFound && !randomBot)
     {

@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
- * and/or modify it under version 3 of the License, or (at your option), any later version.
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
  */
 
 #include "ShareQuestAction.h"
@@ -8,6 +9,7 @@
 #include "Event.h"
 #include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
+#include "QuestPackets.h"
 
 bool ShareQuestAction::Execute(Event event)
 {
@@ -30,9 +32,11 @@ bool ShareQuestAction::Execute(Event event)
         uint32 logQuest = bot->GetQuestSlotQuestId(slot);
         if (logQuest == entry)
         {
-            WorldPacket p;
+            WorldPacket p(CMSG_PUSHQUESTTOPARTY);
             p << entry;
-            bot->GetSession()->HandlePushQuestToParty(p);
+            WorldPackets::Quest::PushQuestToParty pushQuest(std::move(p));
+            pushQuest.Read();
+            bot->GetSession()->HandlePushQuestToParty(pushQuest);
             botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
                 "quest_shared", "Quest shared", {}));
             return true;
@@ -97,9 +101,11 @@ bool AutoShareQuestAction::Execute(Event /*event*/)
         if (!partyNeedsQuest)
             continue;
 
-        WorldPacket p;
+        WorldPacket p(CMSG_PUSHQUESTTOPARTY);
         p << logQuest;
-        bot->GetSession()->HandlePushQuestToParty(p);
+        WorldPackets::Quest::PushQuestToParty pushQuest(std::move(p));
+        pushQuest.Read();
+        bot->GetSession()->HandlePushQuestToParty(pushQuest);
         botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
             "quest_shared", "Quest shared", {}));
         shared = true;

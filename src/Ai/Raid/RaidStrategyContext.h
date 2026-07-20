@@ -1,25 +1,26 @@
-#ifndef _PLAYERBOT_RAIDSTRATEGYCONTEXT_H_
-#define _PLAYERBOT_RAIDSTRATEGYCONTEXT_H_
+#ifndef PLAYERBOTS_RAIDSTRATEGYCONTEXT_H
+#define PLAYERBOTS_RAIDSTRATEGYCONTEXT_H
 
 #include "Strategy.h"
-#include "RaidAq20Strategy.h"
-#include "RaidMcStrategy.h"
-#include "RaidBwlStrategy.h"
-#include "RaidKarazhanStrategy.h"
-#include "RaidGruulsLairStrategy.h"
-#include "RaidMagtheridonStrategy.h"
-#include "RaidNaxxStrategy.h"
-#include "RaidSSCStrategy.h"
-#include "RaidTempestKeepStrategy.h"
-#include "RaidHyjalSummitStrategy.h"
-#include "RaidBlackTempleStrategy.h"
-#include "RaidZulAmanStrategy.h"
-#include "RaidOsStrategy.h"
-#include "RaidEoEStrategy.h"
-#include "RaidVoAStrategy.h"
-#include "RaidUlduarStrategy.h"
-#include "RaidOnyxiaStrategy.h"
+#include "Aq20Strategy.h"
+#include "MCStrategy.h"
+#include "BWLStrategy.h"
+#include "KaraStrategy.h"
+#include "GruulStrategy.h"
+#include "MagStrategy.h"
+#include "NaxxStrategy.h"
+#include "SSCStrategy.h"
+#include "TKStrategy.h"
+#include "HyjalStrategy.h"
+#include "BTStrategy.h"
+#include "ZAStrategy.h"
+#include "OSStrategy.h"
+#include "EoEStrategy.h"
+#include "VoAStrategy.h"
+#include "UldStrategy.h"
+#include "OnyStrategy.h"
 #include "ICCStrategy.h"
+#include "RSStrategy.h"
 
 class RaidStrategyContext : public NamedObjectContext<Strategy>
 {
@@ -44,6 +45,7 @@ public:
         creators["ulduar"] = &RaidStrategyContext::ulduar;
         creators["onyxia"] = &RaidStrategyContext::onyxia;
         creators["icc"] = &RaidStrategyContext::icc;
+        creators["rs"] = &RaidStrategyContext::rs;
     }
 
 private:
@@ -65,6 +67,7 @@ private:
     static Strategy* onyxia(PlayerbotAI* botAI) { return new RaidOnyxiaStrategy(botAI); }
     static Strategy* ulduar(PlayerbotAI* botAI) { return new RaidUlduarStrategy(botAI); }
     static Strategy* icc(PlayerbotAI* botAI) { return new RaidIccStrategy(botAI); }
+    static Strategy* rs(PlayerbotAI* botAI) { return new RaidRsStrategy(botAI); }
 };
 
 #endif

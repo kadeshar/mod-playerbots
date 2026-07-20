@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
- * and/or modify it under version 3 of the License, or (at your option), any later version.
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
  */
 
 #include "TameAction.h"
@@ -422,10 +423,9 @@ bool TameAction::RenamePet(const std::string& newName)
 
     // Remove the current pet and (re-)cast Call Pet spell if the bot is a hunter
     bot->RemovePet(nullptr, PET_SAVE_AS_CURRENT, true);
-    if (bot->getClass() == CLASS_HUNTER && bot->HasSpell(883))
-    {
-        bot->CastSpell(bot, 883, true);
-    }
+    constexpr uint32 SPELL_CALL_PET = 883;
+    if (bot->getClass() == CLASS_HUNTER && bot->HasSpell(SPELL_CALL_PET))
+        bot->CastSpell(bot, SPELL_CALL_PET, true);
 
     return true;
 }

@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
- * and/or modify it under version 3 of the License, or (at your option), any later version.
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
  */
 
 #include "CatDruidStrategy.h"
@@ -12,41 +13,15 @@ class CatDruidStrategyActionNodeFactory : public NamedObjectFactory<ActionNode>
 public:
     CatDruidStrategyActionNodeFactory()
     {
-        creators["faerie fire (feral)"] = &faerie_fire_feral;
-        creators["melee"] = &melee;
         creators["feral charge - cat"] = &feral_charge_cat;
         creators["cat form"] = &cat_form;
         creators["claw"] = &claw;
-        creators["mangle (cat)"] = &mangle_cat;
-        creators["rake"] = &rake;
-        creators["ferocious bite"] = &ferocious_bite;
-        creators["rip"] = &rip;
         creators["pounce"] = &pounce;
         creators["ravage"] = &ravage;
         creators["prowl"] = &prowl;
     }
 
 private:
-    static ActionNode* faerie_fire_feral([[maybe_unused]] PlayerbotAI* botAI)
-    {
-        return new ActionNode(
-            "faerie fire (feral)",
-            /*P*/ {},
-            /*A*/ {},
-            /*C*/ {}
-        );
-    }
-
-    static ActionNode* melee([[maybe_unused]] PlayerbotAI* botAI)
-    {
-        return new ActionNode(
-            "melee",
-            /*P*/ {},
-            /*A*/ {},
-            /*C*/ {}
-        );
-    }
-
     static ActionNode* feral_charge_cat([[maybe_unused]] PlayerbotAI* botAI)
     {
         return new ActionNode(
@@ -73,46 +48,6 @@ private:
             "claw",
             /*P*/ {},
             /*A*/ { NextAction("melee") },
-            /*C*/ {}
-        );
-    }
-
-    static ActionNode* mangle_cat([[maybe_unused]] PlayerbotAI* botAI)
-    {
-        return new ActionNode(
-            "mangle (cat)",
-            /*P*/ {},
-            /*A*/ {},
-            /*C*/ {}
-        );
-    }
-
-    static ActionNode* rake([[maybe_unused]] PlayerbotAI* botAI)
-    {
-        return new ActionNode(
-            "rake",
-            /*P*/ {},
-            /*A*/ {},
-            /*C*/ {}
-        );
-    }
-
-    static ActionNode* ferocious_bite([[maybe_unused]] PlayerbotAI* botAI)
-    {
-        return new ActionNode(
-            "ferocious bite",
-            /*P*/ {},
-            /*A*/ {},
-            /*C*/ {}
-        );
-    }
-
-    static ActionNode* rip([[maybe_unused]] PlayerbotAI* botAI)
-    {
-        return new ActionNode(
-            "rip",
-            /*P*/ {},
-            /*A*/ {},
             /*C*/ {}
         );
     }
@@ -146,7 +81,6 @@ private:
             /*C*/ {}
         );
     }
-
 };
 
 CatDruidStrategy::CatDruidStrategy(PlayerbotAI* botAI) : FeralDruidStrategy(botAI)

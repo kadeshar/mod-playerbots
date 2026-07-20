@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
- * and/or modify it under version 3 of the License, or (at your option), any later version.
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
  */
 
 #include "TankPaladinStrategy.h"
@@ -95,13 +96,14 @@ void TankPaladinStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
             }
         )
     );
-    triggers.push_back(new TriggerNode(
-        "light aoe",
-        {
-            NextAction("avenger's shield", ACTION_HIGH + 5)
-        }
-    )
-);
+    triggers.push_back(
+        new TriggerNode(
+            "light aoe",
+            {
+                NextAction("avenger's shield", ACTION_HIGH + 5)
+            }
+        )
+    );
     triggers.push_back(
         new TriggerNode(
             "medium aoe",
@@ -122,13 +124,6 @@ void TankPaladinStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     triggers.push_back(
         new TriggerNode(
             "medium health",
-                { NextAction("holy shield", ACTION_HIGH + 4)
-            }
-        )
-    );
-    triggers.push_back(
-        new TriggerNode(
-            "low health",
             {
                 NextAction("holy shield", ACTION_HIGH + 4)
             }
@@ -136,20 +131,12 @@ void TankPaladinStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     );
     triggers.push_back(
         new TriggerNode(
-            "critical health",
+            "avenging wrath",
             {
-                NextAction("holy shield", ACTION_HIGH + 4)
+                NextAction("avenging wrath", ACTION_HIGH + 2)
             }
         )
     );
-    triggers.push_back(
-        new TriggerNode(
-        "avenging wrath",
-        {
-            NextAction("avenging wrath", ACTION_HIGH + 2)
-        }
-    )
-);
     triggers.push_back(
         new TriggerNode(
             "target critical health",

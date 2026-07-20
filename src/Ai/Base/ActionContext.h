@@ -1,10 +1,11 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
- * and/or modify it under version 3 of the License, or (at your option), any later version.
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
  */
 
-#ifndef _PLAYERBOT_ACTIONCONTEXT_H
-#define _PLAYERBOT_ACTIONCONTEXT_H
+#ifndef PLAYERBOTS_ACTIONCONTEXT_H
+#define PLAYERBOTS_ACTIONCONTEXT_H
 
 #include "AddLootAction.h"
 #include "AttackAction.h"
@@ -175,6 +176,8 @@ public:
         creators["berserking"] = &ActionContext::berserking;
         creators["every man for himself"] = &ActionContext::every_man_for_himself;
         creators["will of the forsaken"] = &ActionContext::will_of_the_forsaken;
+        creators["stoneform"] = &ActionContext::stoneform;
+        creators["escape artist"] = &ActionContext::escape_artist;
         creators["use trinket"] = &ActionContext::use_trinket;
         creators["auto talents"] = &ActionContext::auto_talents;
         creators["auto share quest"] = &ActionContext::auto_share_quest;
@@ -380,6 +383,8 @@ private:
     static Action* berserking(PlayerbotAI* botAI) { return new CastBerserkingAction(botAI); }
     static Action* every_man_for_himself(PlayerbotAI* botAI) { return new CastEveryManForHimselfAction(botAI); }
     static Action* will_of_the_forsaken(PlayerbotAI* botAI) { return new CastWillOfTheForsakenAction(botAI); }
+    static Action* stoneform(PlayerbotAI* botAI) { return new CastStoneformAction(botAI); }
+    static Action* escape_artist(PlayerbotAI* botAI) { return new CastEscapeArtistAction(botAI); }
     static Action* use_trinket(PlayerbotAI* botAI) { return new UseTrinketAction(botAI); }
     static Action* auto_talents(PlayerbotAI* botAI) { return new AutoSetTalentsAction(botAI); }
     static Action* auto_share_quest(PlayerbotAI* ai) { return new AutoShareQuestAction(ai); }

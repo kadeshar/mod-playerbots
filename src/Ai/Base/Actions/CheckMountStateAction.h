@@ -1,10 +1,11 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
- * and/or modify it under version 3 of the License, or (at your option), any later version.
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
  */
 
-#ifndef _PLAYERBOT_CHECKMOUNTSTATEACTION_H
-#define _PLAYERBOT_CHECKMOUNTSTATEACTION_H
+#ifndef PLAYERBOTS_CHECKMOUNTSTATEACTION_H
+#define PLAYERBOTS_CHECKMOUNTSTATEACTION_H
 
 #include <unordered_map>
 #include <vector>
@@ -53,9 +54,10 @@ private:
     float CalculateDismountDistance() const;
     float CalculateMountDistance() const;
     void Dismount();
+    void ClearStaleFlightFlags();
     bool ShouldFollowMasterMountState(Player* master, bool noAttackers, bool shouldMount) const;
     bool ShouldDismountForMaster(Player* master) const;
-    int32 CalculateMasterMountSpeed(Player* master, const MountData& mountData) const;
+    int32 CalculateMasterMountSpeed(Player* master) const;
     bool CheckForSwiftMount() const;
     std::map<uint32, std::map<int32, std::vector<uint32>>> GetAllMountSpells() const;
     bool TryForms(Player* master, int32 masterMountType, int32 masterSpeed) const;

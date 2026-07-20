@@ -1,6 +1,6 @@
-#ifndef _PLAYERBOT_TBCDUNGEONACTIONCONTEXT_H
-#define _PLAYERBOT_TBCDUNGEONACTIONCONTEXT_H
+#ifndef PLAYERBOTS_TBCDUNGEONACTIONCONTEXT_H
+#define PLAYERBOTS_TBCDUNGEONACTIONCONTEXT_H
 
-#include "AuchenaiCrypts/AuchenaiCryptsActionContext.h"
+#include "ACActionContext.h"
 
 #endif

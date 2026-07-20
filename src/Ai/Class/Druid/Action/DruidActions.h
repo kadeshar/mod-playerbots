@@ -1,10 +1,11 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
- * and/or modify it under version 3 of the License, or (at your option), any later version.
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
  */
 
-#ifndef _PLAYERBOT_DRUIDACTIONS_H
-#define _PLAYERBOT_DRUIDACTIONS_H
+#ifndef PLAYERBOTS_DRUIDACTIONS_H
+#define PLAYERBOTS_DRUIDACTIONS_H
 
 #include "GenericSpellActions.h"
 #include "SharedDefines.h"
@@ -87,16 +88,16 @@ public:
     bool isUseful() override;
 };
 
-class CastMarkOfTheWildAction : public CastBuffSpellAction
+class CastMarkOfTheWildAction : public GroupBuffSpellAction
 {
 public:
-    CastMarkOfTheWildAction(PlayerbotAI* botAI) : CastBuffSpellAction(botAI, "mark of the wild") {}
+    CastMarkOfTheWildAction(PlayerbotAI* botAI) : GroupBuffSpellAction(botAI, "mark of the wild") {}
 };
 
-class CastMarkOfTheWildOnPartyAction : public BuffOnPartyAction
+class CastMarkOfTheWildOnPartyAction : public GroupBuffOnPartyAction
 {
 public:
-    CastMarkOfTheWildOnPartyAction(PlayerbotAI* botAI) : BuffOnPartyAction(botAI, "mark of the wild") {}
+    CastMarkOfTheWildOnPartyAction(PlayerbotAI* botAI) : GroupBuffOnPartyAction(botAI, "mark of the wild") {}
 };
 
 class CastSurvivalInstinctsAction : public CastBuffSpellAction

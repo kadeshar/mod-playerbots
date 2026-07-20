@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
- * and/or modify it under version 3 of the License, or (at your option), any later version.
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
  */
 
 #include "DKAiObjectContext.h"
@@ -49,18 +50,6 @@ private:
     static Strategy* unholy_dps(PlayerbotAI* botAI) { return new UnholyDKStrategy(botAI); }
     static Strategy* tank(PlayerbotAI* botAI) { return new BloodDKStrategy(botAI); }
     static Strategy* blood(PlayerbotAI* botAI) { return new BloodDKStrategy(botAI); }
-};
-
-class DeathKnightDKBuffStrategyFactoryInternal : public NamedObjectContext<Strategy>
-{
-public:
-    DeathKnightDKBuffStrategyFactoryInternal() : NamedObjectContext<Strategy>(false, true)
-    {
-        creators["bdps"] = &DeathKnightDKBuffStrategyFactoryInternal::bdps;
-    }
-
-private:
-    static Strategy* bdps(PlayerbotAI* botAI) { return new DKBuffDpsStrategy(botAI); }
 };
 
 class DeathKnightTriggerFactoryInternal : public NamedObjectContext<Trigger>
@@ -299,7 +288,6 @@ void DKAiObjectContext::BuildSharedStrategyContexts(SharedNamedObjectContextList
     AiObjectContext::BuildSharedStrategyContexts(strategyContexts);
     strategyContexts.Add(new DeathKnightStrategyFactoryInternal());
     strategyContexts.Add(new DeathKnightCombatStrategyFactoryInternal());
-    strategyContexts.Add(new DeathKnightDKBuffStrategyFactoryInternal());
 }
 
 void DKAiObjectContext::BuildSharedActionContexts(SharedNamedObjectContextList<Action>& actionContexts)

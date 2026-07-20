@@ -1,6 +1,7 @@
 /*
- * Copyright (C) 2016+ AzerothCore <www.azerothcore.org>, released under GNU AGPL v3 license, you may redistribute it
- * and/or modify it under version 3 of the License, or (at your option), any later version.
+ * This file is part of the mod-playerbots module for AzerothCore. See AUTHORS file for Copyright
+ * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
+ * or (at your option) any later version.
  */
 
 #include "RogueActions.h"
@@ -10,6 +11,14 @@
 #include "Player.h"
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
+
+namespace
+{
+constexpr uint32 BG_WS_SPELL_WARSONG_FLAG = 23333;
+constexpr uint32 BG_WS_SPELL_SILVERWING_FLAG = 23335;
+constexpr uint32 BG_EY_NETHERSTORM_FLAG_SPELL = 34976;
+constexpr uint32 SPELL_MASTER_POISONER_RANK_3 = 58410;
+}
 
 bool CastStealthAction::isUseful()
 {
@@ -22,7 +31,8 @@ bool CastStealthAction::isUseful()
 bool CastStealthAction::isPossible()
 {
     // do not use with WSG flag or EYE flag
-    return !botAI->HasAura(23333, bot) && !botAI->HasAura(23335, bot) && !botAI->HasAura(34976, bot);
+    return !bot->HasAura(BG_WS_SPELL_WARSONG_FLAG) && !bot->HasAura(BG_WS_SPELL_SILVERWING_FLAG) &&
+           !bot->HasAura(BG_EY_NETHERSTORM_FLAG_SPELL);
 }
 
 bool UnstealthAction::Execute(Event /*event*/)
@@ -50,7 +60,8 @@ bool CheckStealthAction::Execute(Event /*event*/)
 bool CastVanishAction::isUseful()
 {
     // do not use with WSG flag or EYE flag
-    return !botAI->HasAura(23333, bot) && !botAI->HasAura(23335, bot) && !botAI->HasAura(34976, bot);
+    return !bot->HasAura(BG_WS_SPELL_WARSONG_FLAG) && !bot->HasAura(BG_WS_SPELL_SILVERWING_FLAG) &&
+           !bot->HasAura(BG_EY_NETHERSTORM_FLAG_SPELL);
 }
 
 bool CastEnvenomAction::isUseful()
@@ -61,7 +72,7 @@ bool CastEnvenomAction::isUseful()
 bool CastEnvenomAction::isPossible()
 {
     // alternate to eviscerate if talents unlearned
-    return botAI->HasAura(58410, bot) /* Master Poisoner Rank 3 */;
+    return bot->HasAura(SPELL_MASTER_POISONER_RANK_3);
 }
 
 bool CastTricksOfTheTradeOnMainTankAction::isUseful()

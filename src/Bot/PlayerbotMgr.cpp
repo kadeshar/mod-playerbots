@@ -22,6 +22,7 @@
 #include "GuildMgr.h"
 #include "ObjectAccessor.h"
 #include "ObjectGuid.h"
+#include "ObjectMgr.h"
 #include "PlayerbotAIConfig.h"
 #include "PlayerbotRepository.h"
 #include "PlayerbotFactory.h"
@@ -129,7 +130,7 @@ void PlayerbotHolder::AddPlayerBot(ObjectGuid playerGuid, uint32 masterAccountId
                 ++loadingForMaster;
         }
         uint32 count = mgr->GetPlayerbotsCount() + loadingForMaster;
-        if (count >= PlayerbotAIConfig::instance().maxAddedBots)
+        if (count >= uint32(PlayerbotAIConfig::instance().maxAddedBots))
         {
             allowed = false;
             out << "Failure: You have added too many bots (more than " << sPlayerbotAIConfig.maxAddedBots << ")";
@@ -358,10 +359,15 @@ void PlayerbotHolder::LogoutPlayerBot(ObjectGuid guid)
         PlayerbotWorldThreadProcessor::instance().QueueOperation(std::move(cleanupOp));
 
         LOG_DEBUG("playerbots", "Bot {} logging out", bot->GetName().c_str());
+
+        // Remove taxi cheat flag on alts.
+        if (!sRandomPlayerbotMgr.IsRandomBot(bot) && bot->isTaxiCheater())
+            bot->SetTaxiCheater(false);
+
         bot->SaveToDB(false, false);
 
         WorldSession* botWorldSessionPtr = bot->GetSession();
-        WorldSession* masterWorldSessionPtr = nullptr;
+        [[maybe_unused]] WorldSession* masterWorldSessionPtr = nullptr;     // Remove [[maybe_unused]] tag if timed logout implemented.
 
         if (botWorldSessionPtr->isLogingOut())
             return;
@@ -481,12 +487,6 @@ void PlayerbotHolder::OnBotLogin(Player* const bot)
     }
 
     Player* master = botAI->GetMaster();
-    if (master)
-    {
-        ObjectGuid masterGuid = master->GetGUID();
-        if (master->GetGroup() && !master->GetGroup()->IsLeader(masterGuid))
-            master->GetGroup()->ChangeLeader(masterGuid);
-    }
 
     Group* group = bot->GetGroup();
     if (group)
@@ -556,15 +556,14 @@ void PlayerbotHolder::OnBotLogin(Player* const bot)
         Group* mgroup = master->GetGroup();
         if (mgroup->GetMembersCount() >= 5)
         {
-            if (!mgroup->isRaidGroup() && !mgroup->isLFGGroup() && !mgroup->isBGGroup() && !mgroup->isBFGroup())
+            // A 5-member party is full, so only a raid can take a 6th member. GroupInviteOperation::
+            // Execute() self-converts a non-raid group with >= 5 members to a raid before adding, so a
+            // separate ConvertToRaid is unnecessary here. Queue the invite for a raid OR a plain
+            // (non-LFG/BG/battlefield) party; we deliberately skip LFG/BG/BFG groups so a bot login
+            // never force-converts a live dungeon-finder or battleground group into a raid.
+            if (mgroup->isRaidGroup() || (!mgroup->isLFGGroup() && !mgroup->isBGGroup() && !mgroup->isBFGroup()))
             {
-                // Queue ConvertToRaid operation
-                auto convertOp = std::make_unique<GroupConvertToRaidOperation>(master->GetGUID());
-                PlayerbotWorldThreadProcessor::instance().QueueOperation(std::move(convertOp));
-            }
-            if (mgroup->isRaidGroup())
-            {
-                // Queue AddMember operation
+                // Queue AddMember operation; Execute() converts the party to a raid before adding.
                 auto addOp = std::make_unique<GroupInviteOperation>(master->GetGUID(), bot->GetGUID());
                 PlayerbotWorldThreadProcessor::instance().QueueOperation(std::move(addOp));
             }
@@ -737,7 +736,10 @@ std::string const PlayerbotHolder::ProcessBotCommand(std::string const cmd, Obje
     bool addClassBot = sRandomPlayerbotMgr.IsAddclassBot(guid.GetCounter());
 
     if (!addClassBot)
-        return "ERROR: You can not use this command on non-addclass bot.";
+    {
+        if (!(cmd == "refresh=raid" && sPlayerbotAIConfig.resetInstanceIdForAltBots))
+            return "ERROR: You can only use this command on addclass bots.";
+    }
 
     if (!admin)
     {
@@ -1070,6 +1072,7 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
             messages.push_back("Enable player botAI");
             PlayerbotsMgr::instance().AddPlayerbotData(master, true);
             GET_PLAYERBOT_AI(master)->SetMaster(master);
+            PlayerbotRepository::instance().Load(GET_PLAYERBOT_AI(master));
         }
 
         return messages;
@@ -1246,7 +1249,7 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
     std::vector<std::string> chars = split(charnameStr, ',');
     for (std::vector<std::string>::iterator i = chars.begin(); i != chars.end(); i++)
     {
-        std::string const s = *i;
+        std::string s = *i;
 
         if (!strcmp(cmd, "addaccount"))
         {
@@ -1255,7 +1258,13 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
             if (!accountId)
             {
                 // If not found, try to get account ID from character name
-                ObjectGuid charGuid = sCharacterCache->GetCharacterGuidByName(s);
+                std::string charName = s;
+                if (!normalizePlayerName(charName))
+                {
+                    messages.push_back("Neither account nor character '" + s + "' found");
+                    continue;
+                }
+                ObjectGuid charGuid = sCharacterCache->GetCharacterGuidByName(charName);
                 if (!charGuid)
                 {
                     messages.push_back("Neither account nor character '" + s + "' found");
@@ -1283,6 +1292,11 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
         else
         {
             // For regular add command, only add the specific character
+            if (!normalizePlayerName(s))
+            {
+                messages.push_back("Character '" + *i + "' not found");
+                continue;
+            }
             ObjectGuid charGuid = sCharacterCache->GetCharacterGuidByName(s);
             if (!charGuid)
             {
