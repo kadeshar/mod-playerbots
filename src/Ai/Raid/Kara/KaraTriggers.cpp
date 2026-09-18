@@ -5,12 +5,13 @@
  */
 
 #include "KaraTriggers.h"
+#include "EncounterHelpers.h"
 #include "KaraActions.h"
 #include "KaraHelpers.h"
 #include "Playerbots.h"
-#include "RaidBossHelpers.h"
 
 using namespace KaraHelpers;
+using namespace EncounterHelpers;
 
 // General
 
@@ -132,7 +133,7 @@ bool WizardOfOzNeedTargetPriorityTrigger::IsActive()
     if (!IsMechanicTrackerBot(bot, KARA_MAP_ID))
         return false;
 
-    for (const char* name : OZ_TARGETS)
+    for (char const* name : OZ_TARGETS)
     {
         if (AI_VALUE2(Unit*, "find target", name))
             return true;

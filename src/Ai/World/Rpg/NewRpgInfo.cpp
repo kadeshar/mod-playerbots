@@ -32,7 +32,7 @@ void NewRpgInfo::ChangeToWanderRandom()
     data = WanderRandom{};
 }
 
-void NewRpgInfo::ChangeToDoQuest(uint32 questId, const Quest* quest)
+void NewRpgInfo::ChangeToDoQuest(uint32 questId, Quest const* quest)
 {
     startT = getMSTime();
     DoQuest do_quest;
@@ -146,7 +146,8 @@ std::string NewRpgInfo::ToString()
         else if constexpr (std::is_same_v<T, WanderNpc>)
         {
             out << "WANDER_NPC";
-            out << "\nnpcOrGoEntry: " << arg.npcOrGo.GetCounter();
+            out << "\nnpcOrGo: entry " << arg.npcOrGo.GetEntry() << " (guid " << arg.npcOrGo.GetCounter()
+                << ")";
             out << "\nlastWanderNpc: " << startT;
             out << "\nlastReachNpcOrGo: " << arg.lastReach;
         }

@@ -151,6 +151,9 @@ bool Engine::DoNextAction(Unit* /*unit*/, uint32 /*depth*/, bool minimal)
     ActionBasket* basket = nullptr;
     time_t currentTime = time(nullptr);
 
+    if (!minimal)
+        botAI->forceRebuff.RollBuffPendingCycle();
+
     // Update triggers and push default actions
     ProcessTriggers(minimal);
     PushDefaultActions();
@@ -371,10 +374,10 @@ void Engine::addStrategies(std::string first, ...)
     va_list vl;
     va_start(vl, first);
 
-    const char* cur;
+    char const* cur;
     do
     {
-        cur = va_arg(vl, const char*);
+        cur = va_arg(vl, char const*);
         if (cur)
             addStrategy(cur, false);
     } while (cur);
@@ -391,10 +394,10 @@ void Engine::addStrategiesNoInit(std::string first, ...)
     va_list vl;
     va_start(vl, first);
 
-    const char* cur;
+    char const* cur;
     do
     {
-        cur = va_arg(vl, const char*);
+        cur = va_arg(vl, char const*);
         if (cur)
             addStrategy(cur, false);
     } while (cur);
@@ -472,6 +475,9 @@ void Engine::ProcessTriggers(bool minimal)
 
             if (!event)
                 continue;
+
+            if (trigger->IsBuffTrigger() && !trigger->IsDebuffTrigger())
+                botAI->forceRebuff.NoteBuffProposed();
 
             fires[trigger] = event;
             LogAction("T:%s", trigger->getName().c_str());

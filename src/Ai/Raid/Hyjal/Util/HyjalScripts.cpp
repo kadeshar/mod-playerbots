@@ -6,16 +6,17 @@
 
 #include "AllCreatureScript.h"
 #include "DynamicObjectScript.h"
+#include "EncounterHelpers.h"
 #include "HyjalHelpers.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "Playerbots.h"
-#include "RaidBossHelpers.h"
 #include "ScriptMgr.h"
 #include "Spell.h"
 #include "Timer.h"
 
 using namespace HyjalSummitHelpers;
+using namespace EncounterHelpers;
 
 static Player* GetFirstPlayerSpellTarget(Spell* spell, Unit* caster)
 {
@@ -35,12 +36,12 @@ static Player* GetFirstPlayerSpellTarget(Spell* spell, Unit* caster)
     return nullptr;
 }
 
-static bool ShouldInterruptForArchimondeAirBurst(PlayerbotAI* botAI, Player* bot, Player* target)
+static bool ShouldInterruptForArchimondeAirBurst(Player* bot, Player* target)
 {
     if (!target)
         return false;
 
-    Player* mainTank = GetGroupMainTank(botAI, bot);
+    Player* mainTank = GetGroupMainTank(bot);
     if (!mainTank || bot == mainTank)
         return false;
 
@@ -130,7 +131,7 @@ public:
 
         constexpr uint32 TRAIL_DURATION = 18000;
         trail.erase(std::remove_if(trail.begin(), trail.end(),
-            [now](const DoomfireTrailData& d)
+            [now](DoomfireTrailData const& d)
             {
                 return getMSTimeDiff(d.recordTime, now) > TRAIL_DURATION;
             }), trail.end());
@@ -194,7 +195,7 @@ public:
 
             PlayerbotAI* botAI = GET_PLAYERBOT_AI(player);
             if (!botAI || !botAI->HasStrategy("hyjal", BOT_STATE_COMBAT) ||
-                !ShouldInterruptForArchimondeAirBurst(botAI, player, target))
+                !ShouldInterruptForArchimondeAirBurst(player, target))
             {
                 continue;
             }

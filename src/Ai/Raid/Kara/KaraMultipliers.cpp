@@ -10,18 +10,19 @@
 #include "DKActions.h"
 #include "DruidActions.h"
 #include "FollowActions.h"
-#include "GenericActions.h"
 #include "HunterActions.h"
 #include "KaraActions.h"
 #include "KaraHelpers.h"
 #include "MageActions.h"
 #include "PaladinActions.h"
+#include "PetsAction.h"
 #include "Playerbots.h"
 #include "PriestActions.h"
 #include "ReachTargetActions.h"
 #include "RogueActions.h"
 #include "ShamanActions.h"
 #include "WarriorActions.h"
+#include <ctime>
 
 using namespace KaraHelpers;
 
@@ -74,6 +75,9 @@ float AttumenTheHuntsmanDisableAutomaticTargetingMultiplier::GetValue(Action* ac
 
 float AttumenTheHuntsmanStayStackedMultiplier::GetValue(Action* action)
 {
+    if (PlayerbotAI::IsTank(bot))
+        return 1.0f;
+
     if (dynamic_cast<AttackAction*>(action) ||
         dynamic_cast<AttumenTheHuntsmanHandlePhaseTwoAction*>(action))
     {

@@ -5,11 +5,22 @@
  */
 
 #include "AiObjectContext.h"
+#include "GDValueContext.h"
+#include "GruulValueContext.h"
 #include "MechValueContext.h"
+#include "MgTValueContext.h"
+#include "UBValueContext.h"
+#include "ZAValueContext.h"
 #include "ValueContext.h"
 
-void AiObjectContext::BuildSharedValueContexts(SharedNamedObjectContextList<UntypedValue>& valueContexts)
+void AiObjectContext::BuildSharedValueContexts(
+    SharedNamedObjectContextList<UntypedValue>& valueContexts)
 {
     valueContexts.Add(new ValueContext());
+    valueContexts.Add(new RaidGruulsLairValueContext());
+    valueContexts.Add(new RaidZulAmanValueContext());
     valueContexts.Add(new TbcDungeonMechValueContext());
+    valueContexts.Add(new TbcDungeonMgTValueContext());
+    valueContexts.Add(new TbcDungeonUnderbogValueContext());
+    valueContexts.Add(new WotlkDungeonGDValueContext());
 }

@@ -122,6 +122,7 @@ public:
     Player* GetRandomPlayer();
     std::vector<Player*> GetPlayers() { return players; };
     PlayerBotMap GetAllBots() { return playerBots; };
+    void InitArenaTeams();
     void PrintStats();
     double GetBuyMultiplier(Player* bot);
     double GetSellMultiplier(Player* bot);
@@ -178,7 +179,7 @@ protected:
     void OnBotLoginInternal(Player* const bot) override;
 
 private:
-    RandomPlayerbotMgr() : PlayerbotHolder(), processTicks(0)
+    RandomPlayerbotMgr() : PlayerbotHolder()
     {
         this->playersLevel = sPlayerbotAIConfig.randombotStartingLevel;
 
@@ -209,8 +210,8 @@ private:
 
     ~RandomPlayerbotMgr() = default;
 
-    RandomPlayerbotMgr(const RandomPlayerbotMgr&) = delete;
-    RandomPlayerbotMgr& operator=(const RandomPlayerbotMgr&) = delete;
+    RandomPlayerbotMgr(RandomPlayerbotMgr const&) = delete;
+    RandomPlayerbotMgr& operator=(RandomPlayerbotMgr const&) = delete;
 
     RandomPlayerbotMgr(RandomPlayerbotMgr&&) = delete;
     RandomPlayerbotMgr& operator=(RandomPlayerbotMgr&&) = delete;
@@ -240,16 +241,15 @@ private:
     void RandomTeleport(Player* bot);
     void RandomTeleport(Player* bot, std::vector<WorldLocation>& locs, bool hearth = false);
     uint32 GetZoneLevel(uint16 mapId, float teleX, float teleY, float teleZ);
+    std::vector<WorldLocation> GetPlayerZoneTeleportLocations(std::vector<WorldLocation> const& locs, Player* bot);
     typedef void (RandomPlayerbotMgr::*ConsoleCommandHandler)(Player*);
     std::vector<Player*> players;
-    uint32 processTicks;
 
     // std::map<uint32, std::vector<WorldLocation>> rpgLocsCache;
     std::map<uint32, std::map<uint32, std::vector<WorldLocation>>> rpgLocsCacheLevel;
     std::map<TeamId, std::map<BattlegroundTypeId, std::vector<uint32>>> BattleMastersCache;
     std::unordered_map<uint32, BotEventCache> eventCache;
     std::unordered_set<uint32> currentBots;
-    uint32 bgBotsCount;
     uint32 playersLevel;
 
     // Account lists

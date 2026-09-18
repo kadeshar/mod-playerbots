@@ -172,7 +172,9 @@ AiPlayerbot.RandomBotGuildCount = 20
 # Maximum number of members in randombot guilds (minimum is hardcoded to 10)
 AiPlayerbot.RandomBotGuildSizeMax = 15
 
-# Delete all randombot guilds if set to 1
+# Delete all randombot (and any addclass bot) guilds on startup. While enabled,
+# no new randombot guilds are created or joined. Set back to 0 and restart the
+# server to resume normal random bot guild assignment.
 AiPlayerbot.DeleteRandomBotGuilds = 0
 
 # Randombots will invite players to groups/raids/guilds
@@ -509,6 +511,22 @@ AiPlayerbot.TellWhenMissingBuffReagents = 1
 # Default: 300 (5 minutes)
 AiPlayerbot.MissingBuffReagentMessageCooldown = 300
 
+# When a ready check is issued out of combat, bots refresh missing/short buffs before reporting ready.
+# A bot that still has buff work it can perform stays not-ready until the ready check ends; this
+# includes missing reagents (the cast is attempted and fails). Uses the always-on "force rebuff"
+# strategy: bots with strategy sets saved before this feature keep their saved set - reset their
+# strategies or use "nc +force rebuff" to opt them in. The "rebuff" chat command starts the same
+# buff pass without a ready check and works regardless of this setting.
+# Default: 0 (disabled)
+AiPlayerbot.ForceRebuffOnReadyCheck = 0
+
+# During a force-rebuff pass (ready check or the "rebuff" command), a buff is topped off (recast)
+# once it drops more than this many seconds below its full duration, so buffs are refreshed toward
+# maximum remaining time to last the fight. The effective margin never drops below the time the
+# pass has already run, so small values are safe.
+# Default: 60
+AiPlayerbot.ForceRebuffMarginSecs = 60
+
 # Bots can flee from enemies
 AiPlayerbot.FleeingEnabled = 1
 
@@ -719,6 +737,12 @@ AiPlayerbot.RandomBotMaxLevel = 80
 # Sync max randombot level with max level of online players
 # Default: 0 (disabled)
 AiPlayerbot.SyncLevelWithPlayers = 0
+
+# Concentrate randombots teleporting into level-appropriate open-world zones that hold a real
+# (non-GM) player. Falls back to normal teleporting behaviour when no player's zone matches.
+# Best paired with AiPlayerbot.SyncLevelWithPlayers.
+# Default: 0 (disabled)
+AiPlayerbot.RandomBotConcentrateInPlayerZone = 0
 
 # Mark many quests ≤ bot level as complete (slows down bot creation)
 # Default: 0 (disabled)
@@ -1665,7 +1689,9 @@ AiPlayerbot.RandomBotArenaTeam5v5Count = 5
 AiPlayerbot.RandomBotArenaTeamMaxRating = 2000
 AiPlayerbot.RandomBotArenaTeamMinRating = 1000
 
-# Delete all randombot arena teams
+# Delete all randombot (and any addclass bot) arena teams on startup. While enabled,
+# no new randombot arena teams are created or joined. Set back to 0 and restart the
+# server to resume normal randombot arena team assignment.
 AiPlayerbot.DeleteRandomBotArenaTeams = 0
 
 # PvP Restricted Zones (bots will not initiate PvP or defend themselves if attacked)

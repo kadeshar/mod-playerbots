@@ -109,7 +109,7 @@ uint8 AiFactory::GetPlayerSpecTab(Player* bot)
 std::map<uint8, uint32> AiFactory::GetPlayerSpecTabs(Player* bot)
 {
     std::map<uint8, uint32> tabs = {{0, 0}, {0, 0}, {0, 0}};
-    const PlayerTalentMap& talentMap = bot->GetTalentMap();
+    PlayerTalentMap const& talentMap = bot->GetTalentMap();
     for (PlayerTalentMap::const_iterator i = talentMap.begin(); i != talentMap.end(); ++i)
     {
         uint32 spellId = i->first;
@@ -126,7 +126,7 @@ std::map<uint8, uint32> AiFactory::GetPlayerSpecTabs(Player* bot)
 
         uint32 const* talentTabIds = GetTalentTabPages(bot->getClass());
 
-        const SpellInfo* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
         int rank = spellInfo ? spellInfo->GetRank() : 1;
         if (talentInfo->TalentTab == talentTabIds[0])
             tabs[0] += rank;
@@ -371,10 +371,12 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
             engine->addStrategiesNoInit("cc", "dps assist", "aoe", "bdps", nullptr);
             break;
         case CLASS_ROGUE:
-            if (tab == ROGUE_TAB_ASSASSINATION || tab == ROGUE_TAB_SUBTLETY)
-                engine->addStrategiesNoInit("melee", "dps assist", "aoe", nullptr);
-            else // if (tab == ROGUE_TAB_COMBAT)
-                engine->addStrategiesNoInit("dps", "dps assist", "aoe", nullptr);
+            if (tab == ROGUE_TAB_COMBAT)
+                engine->addStrategiesNoInit("combat", nullptr);
+            else // if (tab == ROGUE_TAB_ASSASSINATION || tab == ROGUE_TAB_SUBTLETY)
+                engine->addStrategiesNoInit("assassin", nullptr);
+
+            engine->addStrategiesNoInit("dps assist", "aoe", nullptr);
             break;
         case CLASS_WARLOCK:
             if (tab == WARLOCK_TAB_AFFLICTION)
@@ -581,7 +583,7 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
 
     if (!player->InBattleground())
     {
-        nonCombatEngine->addStrategiesNoInit("nc", "food", "chat", "follow", "default", "quest", "loot",
+        nonCombatEngine->addStrategiesNoInit("nc", "food", "chat", "follow", "default", "force rebuff", "quest", "loot",
                                             "gather", "duel", "pvp", "buff", "mount", "emote", nullptr);
     }
 
@@ -673,8 +675,8 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
     // Battleground switch
     if (player->InBattleground() && player->GetBattleground())
     {
-        nonCombatEngine->addStrategiesNoInit("nc", "chat", "default", "buff", "food", "mount", "pvp", "dps assist",
-                                       "attack tagged", "emote", nullptr);
+        nonCombatEngine->addStrategiesNoInit("nc", "chat", "default", "force rebuff", "buff", "food", "mount", "pvp",
+                                       "dps assist", "attack tagged", "emote", nullptr);
         nonCombatEngine->removeStrategy("custom::say", false);
         nonCombatEngine->removeStrategy("travel", false);
         nonCombatEngine->removeStrategy("rpg", false);

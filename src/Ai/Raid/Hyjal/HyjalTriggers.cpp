@@ -6,12 +6,13 @@
 
 #include "HyjalTriggers.h"
 #include "AiFactory.h"
+#include "EncounterHelpers.h"
 #include "HyjalActions.h"
 #include "HyjalHelpers.h"
 #include "Playerbots.h"
-#include "RaidBossHelpers.h"
 
 using namespace HyjalSummitHelpers;
+using namespace EncounterHelpers;
 
 // General
 
@@ -226,11 +227,11 @@ bool AzgalorMainTankIsPositioningBossTrigger::IsActive()
     if (!azgalor || azgalor->GetVictim() == bot)
         return false;
 
-    Player* mainTank = GetGroupMainTank(botAI, bot);
+    Player* mainTank = GetGroupMainTank(bot);
     if (!mainTank || !GET_PLAYERBOT_AI(mainTank) || botAI->IsMainTank(bot))
         return false;
 
-    TankPositionState tankState = GetAzgalorTankPositionState(botAI, bot);
+    TankPositionState tankState = GetAzgalorTankPositionState(bot);
     return tankState == TankPositionState::Unknown ||
            tankState == TankPositionState::MovingToTransition;
 }
@@ -278,7 +279,7 @@ bool AzgalorDoomguardsMustBeControlledTrigger::IsActive()
     if (botAI->IsAssistTankOfIndex(bot, 1, true))
     {
         // Trigger for second assist tank only if first assist tank has Doom
-        Player* firstAssistTank = GetGroupAssistTank(botAI, bot, 0);
+        Player* firstAssistTank = GetGroupAssistTank(bot, 0);
         if (firstAssistTank &&
             !firstAssistTank->HasAura(static_cast<uint32>(HyjalSummitSpells::SPELL_DOOM)))
             return false;

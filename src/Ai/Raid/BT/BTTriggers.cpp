@@ -8,11 +8,12 @@
 #include "AiFactory.h"
 #include "BTActions.h"
 #include "BTHelpers.h"
+#include "EncounterHelpers.h"
 #include "Playerbots.h"
-#include "RaidBossHelpers.h"
 #include "SharedDefines.h"
 
 using namespace BlackTempleHelpers;
+using namespace EncounterHelpers;
 
 // General
 
@@ -421,7 +422,7 @@ bool MotherShahrazTanksArePositioningBossTrigger::IsActive()
     if (!shahraz || shahraz->GetHealthPct() < 90.0f)
         return false;
 
-    TankPositionState tankState = GetShahrazTankPositionState(botAI, bot);
+    TankPositionState tankState = GetShahrazTankPositionState(bot);
     return tankState != TankPositionState::Positioned;
 }
 
