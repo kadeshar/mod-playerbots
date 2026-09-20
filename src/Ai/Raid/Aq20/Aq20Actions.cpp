@@ -19,7 +19,7 @@ bool Aq20UseCrystalAction::Execute(Event /*event*/)
                     crystal->GetPositionX() + frand(-3.5f, 3.5f),
                     crystal->GetPositionY() + frand(-3.5f, 3.5f),
                     crystal->GetPositionZ());
-
+            // test
             // if we're already in range just wait here until it's time to activate crystal
             SetNextMovementDelay(500);
 
